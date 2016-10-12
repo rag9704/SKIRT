@@ -42,6 +42,7 @@ void VoronoiDustGrid::setupSelfBefore()
     _random = find<Random>();
 
     Log* log = find<Log>();
+    log->info("Relaxating voronoi grid " + QString::number(_relaxationSteps) + " times...");
 
     // Determine an appropriate set of particles and construct the Voronoi mesh
     switch (_distribution)
@@ -56,7 +57,7 @@ void VoronoiDustGrid::setupSelfBefore()
             }
             log->info("Computing Voronoi tesselation for " + QString::number(_numParticles)
                       + " uniformly distributed random particles...");
-            _mesh = new VoronoiMesh(rv, extent(), log);
+            _mesh = new VoronoiMesh(rv, extent(), log, _relaxationSteps);
             break;
         }
     case CentralPeak:
@@ -81,7 +82,7 @@ void VoronoiDustGrid::setupSelfBefore()
             }
             log->info("Computing Voronoi tesselation for " + QString::number(_numParticles)
                       + " random particles distributed in a central peak...");
-            _mesh = new VoronoiMesh(rv, extent(), log);
+            _mesh = new VoronoiMesh(rv, extent(), log, _relaxationSteps);
             break;
         }
     case DustDensity:
@@ -103,7 +104,7 @@ void VoronoiDustGrid::setupSelfBefore()
             }
             log->info("Computing Voronoi tesselation for " + QString::number(_numParticles)
                       + " random particles distributed according to dust density...");
-            _mesh = new VoronoiMesh(rv, extent(), log);
+            _mesh = new VoronoiMesh(rv, extent(), log, _relaxationSteps);
             break;
         }
     case DustTesselation:
@@ -122,14 +123,14 @@ void VoronoiDustGrid::setupSelfBefore()
             if (!dpi) throw FATALERROR("Can't retrieve particle locations from this dust distribution");
             log->info("Computing Voronoi tesselation for " + QString::number(dpi->numParticles())
                       + " dust distribution particles...");
-            _mesh = new VoronoiMesh(dpi, extent(), log);
+            _mesh = new VoronoiMesh(dpi, extent(), log, _relaxationSteps);
             break;
         }
     case File:
         {
             if (!_meshfile) throw FATALERROR("File containing particle locations is not defined");
             log->info("Computing Voronoi tesselation for particles loaded from file " + _meshfile->filename() + "...");
-            _mesh = new VoronoiMesh(_meshfile, QList<int>(), extent(), log);
+            _mesh = new VoronoiMesh(_meshfile, QList<int>(), extent(), log, _relaxationSteps);
             break;
         }
     default:
@@ -244,6 +245,20 @@ void VoronoiDustGrid::setDistribution(VoronoiDustGrid::Distribution value)
 VoronoiDustGrid::Distribution VoronoiDustGrid::distribution() const
 {
     return _distribution;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void VoronoiDustGrid::setRelaxationSteps(int value)
+{
+    _relaxationSteps = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+int VoronoiDustGrid::relaxationSteps() const
+{
+    return _relaxationSteps;
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -63,21 +63,22 @@ public:
         specifies the extent of the domain as a box lined up with the coordinate axes. Any
         particles located outside of the domain are discarded. If the optional \em log argument is
         provided, the constructor logs progress messages while the Voronoi mesh is being built. */
-    VoronoiMesh(VoronoiMeshFile* meshfile, QList<int> fieldIndices, const Box& extent, Log* log=nullptr);
+    VoronoiMesh(VoronoiMeshFile* meshfile, QList<int> fieldIndices, const Box& extent, Log* log=nullptr,
+                const int relaxationSteps=0);
 
     /** This constructor obtains the particle coordinates from a DustParticleInterface instance.
         There are no field values associated with the particles. The \em extent argument specifies
         the extent of the domain as a box lined up with the coordinate axes. Any particles located
         outside of the domain are discarded. If the optional \em log argument is provided, the
         constructor logs progress messages while the Voronoi mesh is being built. */
-    VoronoiMesh(DustParticleInterface* dpi, const Box& extent, Log* log=nullptr);
+    VoronoiMesh(DustParticleInterface* dpi, const Box& extent, Log* log=nullptr, const int relaxationSteps=0);
 
     /** This constructor uses the particle coordinates specified as a vector. There are no field
         values associated with the particles. The \em extent argument specifies the extent of the
         domain as a box lined up with the coordinate axes. The specified particle locations are
         assumed to be inside the domain; no check is performed. If the optional \em log argument is
         provided, the constructor logs progress messages while the Voronoi mesh is being built. */
-    VoronoiMesh(const std::vector<Vec>& particles, const Box& extent, Log* log=nullptr);
+    VoronoiMesh(const std::vector<Vec>& particles, const Box& extent, Log* log=nullptr, const int relaxationSteps=0);
 
 private:
     /** This private function is called from each constructor. Given a list of generating

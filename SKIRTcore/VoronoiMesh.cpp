@@ -216,7 +216,8 @@ using namespace VoronoiMesh_Private;
 
 ////////////////////////////////////////////////////////////////////
 
-VoronoiMesh::VoronoiMesh(VoronoiMeshFile* meshfile, QList<int> fieldIndices, const Box& extent, Log* log)
+VoronoiMesh::VoronoiMesh(VoronoiMeshFile* meshfile, QList<int> fieldIndices, const Box& extent, Log* log,
+                         const int relaxationSteps)
     : _extent(extent), _eps(1e-12 * extent.widths().norm()),
       _Ndistribs(0), _integratedDensity(0)
 {
@@ -261,21 +262,44 @@ VoronoiMesh::VoronoiMesh(VoronoiMeshFile* meshfile, QList<int> fieldIndices, con
     // construct the Voronoi tesselation
     // do not remove nearby particles because the particle index is also used for field values
     buildMesh(particles, false, log);
+    // Relaxate the particle positions
+    for (int i=0; i<relaxationSteps; i++)
+    {
+        // Set new particle position to centroid of cell (Lloyd's algorithm)
+        for (int m=0; m<_Ncells; m++)
+        {
+            particles[m] = _cells[m]->centroid();
+        }
+        // Rebuild cells
+        buildMesh(particles, false, log);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////
 
-VoronoiMesh::VoronoiMesh(const std::vector<Vec> &particles, const Box &extent, Log* log)
+VoronoiMesh::VoronoiMesh(const std::vector<Vec> &particles, const Box &extent, Log* log, const int relaxationSteps)
     : _extent(extent), _eps(1e-12 * extent.widths().norm()),
       _Ndistribs(0), _integratedDensity(0)
 {
     // construct the Voronoi tesselation
     buildMesh(particles, true, log);
+    // Relaxate the particle positions
+    for (int i=0; i<relaxationSteps; i++)
+    {
+        std::vector<Vec> newParticles = particles;
+        // Set new particle position to centroid of cell (Lloyd's algorithm)
+        for (int m=0; m<_Ncells; m++)
+        {
+            newParticles[m] = _cells[m]->centroid();
+        }
+        // Rebuild cells
+        buildMesh(newParticles, true, log);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////
 
-VoronoiMesh::VoronoiMesh(DustParticleInterface *dpi, const Box &extent, Log* log)
+VoronoiMesh::VoronoiMesh(DustParticleInterface *dpi, const Box &extent, Log* log, const int relaxationSteps)
     : _extent(extent), _eps(1e-12 * extent.widths().norm()),
       _Ndistribs(0), _integratedDensity(0)
 {
@@ -290,6 +314,17 @@ VoronoiMesh::VoronoiMesh(DustParticleInterface *dpi, const Box &extent, Log* log
 
     // construct the Voronoi tesselation
     buildMesh(particles, true, log);
+    // Relaxate the particle positions
+    for (int i=0; i<relaxationSteps; i++)
+    {
+        // Set new particle position to centroid of cell (Lloyd's algorithm)
+        for (int m=0; m<_Ncells; m++)
+        {
+            particles[m] = _cells[m]->centroid();
+        }
+        // Rebuild cells
+        buildMesh(particles, true, log);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////

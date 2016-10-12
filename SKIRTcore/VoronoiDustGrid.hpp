@@ -44,6 +44,11 @@ class VoronoiDustGrid : public BoxDustGrid
     Q_CLASSINFO("Default", "DustDensity")
     Q_CLASSINFO("TrueIf", "File")
 
+    Q_CLASSINFO("Property", "relaxationSteps")
+    Q_CLASSINFO("Title", "the amount of times the voronoi cells will relax")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("Default", "0")
+
     Q_CLASSINFO("Property", "voronoiMeshFile")
     Q_CLASSINFO("Title", "the Voronoi mesh data file")
     Q_CLASSINFO("Optional", "true")
@@ -93,6 +98,12 @@ public:
         the random particles. */
     Q_INVOKABLE Distribution distribution() const;
 
+    /** Sets the amount of times Lloyd's algorithm will be used to relaxate the voronoi grid */
+    Q_INVOKABLE void setRelaxationSteps(int value);
+
+    /** Returns the amound of times Lloyd's algorithm will be used to relaxate the voronoi grid */
+    Q_INVOKABLE int relaxationSteps() const;
+
     /** Sets the file containing the Voronoi particle locations in case \em distribution has the
         value \em File. */
     Q_INVOKABLE void setVoronoiMeshFile(VoronoiMeshFile* value);
@@ -133,6 +144,7 @@ private:
     // discoverable attributes (in addition to extent which is stored in inherited Box)
     int _numParticles;
     Distribution _distribution;
+    int _relaxationSteps;
     VoronoiMeshFile* _meshfile;
 
     // data members initialized during setup
