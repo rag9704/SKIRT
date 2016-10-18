@@ -262,7 +262,9 @@ VoronoiMesh::VoronoiMesh(VoronoiMeshFile* meshfile, QList<int> fieldIndices, con
     // construct the Voronoi tesselation
     // do not remove nearby particles because the particle index is also used for field values
     buildMesh(particles, false, log);
+
     // Relaxate the particle positions
+    if(relaxationSteps > 0) log->info("Relaxating voronoi grid " + QString::number(relaxationSteps) + " times...");
     for (int i=0; i<relaxationSteps; i++)
     {
         // Set new particle position to centroid of cell (Lloyd's algorithm)
@@ -284,6 +286,7 @@ VoronoiMesh::VoronoiMesh(const std::vector<Vec> &particles, const Box &extent, L
     // construct the Voronoi tesselation
     buildMesh(particles, true, log);
     // Relaxate the particle positions
+    if(relaxationSteps > 0) log->info("Relaxating voronoi grid " + QString::number(relaxationSteps) + " times...");
     for (int i=0; i<relaxationSteps; i++)
     {
         std::vector<Vec> newParticles = particles;
@@ -315,6 +318,7 @@ VoronoiMesh::VoronoiMesh(DustParticleInterface *dpi, const Box &extent, Log* log
     // construct the Voronoi tesselation
     buildMesh(particles, true, log);
     // Relaxate the particle positions
+    if(relaxationSteps > 0) log->info("Relaxating voronoi grid " + QString::number(relaxationSteps) + " times...");
     for (int i=0; i<relaxationSteps; i++)
     {
         // Set new particle position to centroid of cell (Lloyd's algorithm)

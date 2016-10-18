@@ -361,6 +361,10 @@ public:
         from the general MonteCarloSimulation class. */
     virtual bool dustemission() const = 0;
 
+    /** This function synchronizes the results of the absorption by calling the sync() function on the
+        absorption tables. **/
+    virtual void sumResults();
+
     /** This pure virtual function must be implemented in each subclass to indicate whether the
         absorption rates in each cell need to be stored for this dust system. This is needed if
         dust emission is turned on, but it can also be chosen if the user wants to study the mean
@@ -387,6 +391,9 @@ public:
         corresponding to the \f$h\f$'th dust component, \f$\rho_{m,h}\f$ the dust density
         corresponding to the \f$h\f$'th dust component, and \f$V_m\f$ the volume of the cell. */
     Array meanintensityv(int m) const;
+
+    /** This function reinitialises the grid, used when building a dynamic grid */
+    virtual void reinitialiseGrid() = 0;
 
     //======================== Data Members ========================
 

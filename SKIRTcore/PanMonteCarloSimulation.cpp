@@ -17,6 +17,7 @@
 #include "StellarSystem.hpp"
 #include "TimeLogger.hpp"
 #include "Units.hpp"
+#include "FatalError.hpp"
 
 using namespace std;
 
@@ -36,6 +37,8 @@ void PanMonteCarloSimulation::setupSelfAfter()
     // properly size the array used to communicate between rundustXXX() and the corresponding parallel loop
     _Ncells = _pds ? _pds->Ncells() : 0;
     if (_pds && _pds->dustemission()) _Labsbolv.resize(_Ncells);
+    // Cache the total amount of packages
+    _totalPackages = packages();
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -91,7 +94,16 @@ PanDustSystem* PanMonteCarloSimulation::dustSystem() const
 
 void PanMonteCarloSimulation::runSelf()
 {
+    // If there are prepackages (used to do a coarse simulation to determine the dynamic grid)
+    if(_prePackages > 0)
+    {
+        setPackages(_prePackages);
+        runstellaremission();
+        dynamicGrid();
+        setPackages(_totalPackages);
+    }
     runstellaremission();
+
     if (_pds && _pds->dustemission())
     {
         if (_pds && _pds->selfAbsorption()) rundustselfabsorption();

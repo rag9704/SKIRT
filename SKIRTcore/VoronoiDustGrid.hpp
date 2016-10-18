@@ -49,6 +49,12 @@ class VoronoiDustGrid : public BoxDustGrid
     Q_CLASSINFO("MinValue", "0")
     Q_CLASSINFO("Default", "0")
 
+    Q_CLASSINFO("Property", "tempDistFraction")
+    Q_CLASSINFO("Title", "the percentage of grid particles drawn from a temperature distribution")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("MaxValue", "0.999")
+    Q_CLASSINFO("Default", "0")
+
     Q_CLASSINFO("Property", "voronoiMeshFile")
     Q_CLASSINFO("Title", "the Voronoi mesh data file")
     Q_CLASSINFO("Optional", "true")
@@ -104,6 +110,12 @@ public:
     /** Returns the amound of times Lloyd's algorithm will be used to relaxate the voronoi grid */
     Q_INVOKABLE int relaxationSteps() const;
 
+    /** Sets the fraction of grid particles drawn from a temperature distribution */
+    Q_INVOKABLE void setTempDistFraction(double value);
+
+    /** Returns the fraction of grid particles drawn from a temperature distribution */
+    Q_INVOKABLE double tempDistFraction() const;
+
     /** Sets the file containing the Voronoi particle locations in case \em distribution has the
         value \em File. */
     Q_INVOKABLE void setVoronoiMeshFile(VoronoiMeshFile* value);
@@ -138,6 +150,9 @@ public:
         VoronoiMesh class for more information. */
     void path(DustGridPath* path) const;
 
+    /** This function draws extra grid points from a temperature distribution */
+    void drawFromTemperatureDistribution();
+
     //======================== Data Members ========================
 
 private:
@@ -145,12 +160,14 @@ private:
     int _numParticles;
     Distribution _distribution;
     int _relaxationSteps;
+    double _tempDistFraction;
     VoronoiMeshFile* _meshfile;
 
     // data members initialized during setup
     Random* _random;
     VoronoiMesh* _mesh;
     bool _meshOwned;
+    int _totalNumParticles; // Total amount of particles (current can be lower during prepackage phase)
 };
 
 //////////////////////////////////////////////////////////////////////

@@ -65,6 +65,7 @@ public:
     /** Returns the dust system for this simulation, or null if there is no dust. */
     Q_INVOKABLE PanDustSystem* dustSystem() const;
 
+
     //======================== Other Functions =======================
 
 protected:

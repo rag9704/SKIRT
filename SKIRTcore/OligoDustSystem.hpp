@@ -81,6 +81,9 @@ public:
         where a map is created for each wavelength in the global wavelength grid. */
     void write() const;
 
+    /** This function reinitialises the grid, used when building a dynamic grid */
+    void reinitialiseGrid();
+
     //======================== Data Members ========================
 
 private:

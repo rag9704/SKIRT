@@ -28,6 +28,18 @@ public:
         precision for the numerical values in the text file. */
     DustGridPlotFile(const SimulationItem* item, QString filename);
 
+    /** This function writes the specified string to the file as a new line. If the calling process
+        is not the root, this function will have no effect. */
+    void writeLine(QString line);
+
+    /** This function outputs the specified 3D point, using the Units object specified in the
+        constructor to convert the coordinates to output units. */
+    void writePoint(double x, double y, double z);
+
+    /** This function outputs the specified 3D point together with a value, using the Units object
+        specified in the constructor to convert the coordinates to output units. */
+    void writePoint(double x, double y, double z, double v);
+
     /** This function outputs the specified 2D line segment, using the Units object specified in
         the constructor to convert the coordinates to output units. */
     void writeLine(double beg1, double beg2, double end1, double end2);

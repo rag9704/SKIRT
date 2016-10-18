@@ -23,6 +23,7 @@
 #include "TimeLogger.hpp"
 #include "Units.hpp"
 #include "WavelengthGrid.hpp"
+#include "VoronoiDustGrid.hpp"
 
 using namespace std;
 
@@ -60,6 +61,8 @@ void MonteCarloSimulation::setupSelfBefore()
         throw FATALERROR("Stellar system was not set");
     if (!_is)
         throw FATALERROR("Instrument system was not set");
+    if (_prePackages < 0)
+        throw FATALERROR("Number of prepackages is negative");
     // dust system is optional; nr of packages has a valid default
 }
 
@@ -197,6 +200,20 @@ void MonteCarloSimulation::setContinuousScattering(bool value)
 bool MonteCarloSimulation::continuousScattering() const
 {
     return _continuousScattering;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void MonteCarloSimulation::setPrePackages(double value)
+{
+    _prePackages = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double MonteCarloSimulation::prePackages() const
+{
+    return _prePackages;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -540,6 +557,27 @@ void MonteCarloSimulation::simulatescattering(PhotonPackage* pp)
     // Now perform the scattering using this dust mix
     Direction bfknew = mix->scatteringDirectionAndPolarization(pp, pp);
     pp->scatter(bfknew);
+}
+
+////////////////////////////////////////////////////////////////////
+
+void MonteCarloSimulation::dynamicGrid()
+{
+    Log* log = find<Log>();
+    // Check if we have a voronoi dustgrid
+    if(dynamic_cast<VoronoiDustGrid*>(_ds->dustGrid()) != NULL)
+    {
+        // Draw extra voronoi points from temperature distribution
+        VoronoiDustGrid* vorogrid = dynamic_cast<VoronoiDustGrid*>(_ds->dustGrid());
+        vorogrid->drawFromTemperatureDistribution();
+        // Make sure all DustSystem variables are reinitialized correctly (eg the absorption table)
+        _ds->reinitialiseGrid();
+        log->info("Reinitialized voronoi grid");
+    }
+    else
+    {
+        throw FATALERROR("Use a voronoi grid when using a dynamic grid!");
+    }
 }
 
 ////////////////////////////////////////////////////////////////////

@@ -24,6 +24,35 @@ DustGridPlotFile::DustGridPlotFile(const SimulationItem* item, QString filename)
 
 ////////////////////////////////////////////////////////////////////
 
+void DustGridPlotFile::writeLine(QString line)
+{
+    TextOutFile::writeLine(line);
+}
+
+////////////////////////////////////////////////////////////////////
+
+void DustGridPlotFile::writePoint(double x, double y, double z)
+{
+    if (!_out.is_open()) return;
+    x = _units->olength(x);
+    y = _units->olength(y);
+    z = _units->olength(z);
+    _out << x << '\t' << y << '\t' << z << '\n';
+}
+
+////////////////////////////////////////////////////////////////////
+
+void DustGridPlotFile::writePoint(double x, double y, double z, double v)
+{
+    if (!_out.is_open()) return;
+    x = _units->olength(x);
+    y = _units->olength(y);
+    z = _units->olength(z);
+    _out << x << '\t' << y << '\t' << z << '\t' << v << '\n';
+}
+
+////////////////////////////////////////////////////////////////////
+
 void DustGridPlotFile::writeLine(double beg1, double beg2, double end1, double end2)
 {
     if (!_out.is_open()) return;

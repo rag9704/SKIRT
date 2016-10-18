@@ -14,7 +14,12 @@
 #include "VoronoiMesh.hpp"
 #include "VoronoiMeshFile.hpp"
 #include "VoronoiMeshInterface.hpp"
+#include "PanMonteCarloSimulation.hpp"
 #include "container.hh"
+#include "PanDustSystem.hpp"
+#include "TextOutFile.hpp"
+#include "DustMix.hpp"
+#include "NR.hpp"
 
 using namespace std;
 
@@ -42,7 +47,16 @@ void VoronoiDustGrid::setupSelfBefore()
     _random = find<Random>();
 
     Log* log = find<Log>();
-    log->info("Relaxating voronoi grid " + QString::number(_relaxationSteps) + " times...");
+
+    // Prepackage phase (for setting up the dynamic grid)
+    if(_tempDistFraction > 0)
+    {
+        // Use a fraction of the total particles for the prepackage phase
+        _totalNumParticles = _numParticles;
+        _numParticles = ceil((1-_tempDistFraction)*_totalNumParticles);
+        log->info("Prepackage phase: Using " + QString::number(_numParticles) + " of the total "+
+                  QString::number(_totalNumParticles)+" photon packages to calculate a temperature distribution.");
+    }
 
     // Determine an appropriate set of particles and construct the Voronoi mesh
     switch (_distribution)
@@ -263,6 +277,20 @@ int VoronoiDustGrid::relaxationSteps() const
 
 //////////////////////////////////////////////////////////////////////
 
+void VoronoiDustGrid::setTempDistFraction(double value)
+{
+    _tempDistFraction = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double VoronoiDustGrid::tempDistFraction() const
+{
+    return _tempDistFraction;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void VoronoiDustGrid::setVoronoiMeshFile(VoronoiMeshFile* value)
 {
     if (_meshfile) delete _meshfile;
@@ -317,6 +345,86 @@ Position VoronoiDustGrid::randomPositionInCell(int m) const
 void VoronoiDustGrid::path(DustGridPath* path) const
 {
     _mesh->path(path);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void VoronoiDustGrid::drawFromTemperatureDistribution()
+{
+    Log* log = find<Log>();
+    log->info("Drawing extra voronoi points from a temperature distribution.");
+    DustSystem* ds = find<DustSystem>(); // Cache the dust system
+
+    // Construct cdf of V*T (volume since we want to sample more from bigger cells, if temperature is equal)
+    // Start with a V*T vector
+    Array VTv; // Volume * Temperature for every cell (_numParticles is the old grid size)
+    VTv.resize(_numParticles);
+    for(int m=0; m<_numParticles; m++)
+    {
+        ds->sumResults();
+        // indicative temperature = average population equilibrium temperature weighed by population mass fraction
+        const Array& Jv = ds->meanintensityv(m);
+        // average over dust components
+        double sumRho_h = 0;
+        double sumRhoT_h = 0;
+        for (int h=0; h<ds->Ncomp(); h++)
+        {
+            double rho_h = ds->density(m,h);
+            if (rho_h>0.0)
+            {
+                // average over dust populations within component
+                double sumMu_c = 0;
+                double sumMuT_c = 0;
+                for (int c=0; c<ds->mix(h)->Npop(); c++)
+                {
+                    double mu_c = ds->mix(h)->mu(c);
+                    double T_c = ds->mix(h)->equilibrium(Jv,c);
+                    sumMu_c += mu_c;
+                    sumMuT_c += mu_c * T_c;
+                }
+                double T_h = sumMuT_c / sumMu_c;
+
+                sumRho_h += rho_h;
+                sumRhoT_h += rho_h * T_h;
+            }
+        }
+        VTv[m] = _mesh->volume(m) * sumRhoT_h / sumRho_h; // V*T vector: volume * temperature
+    }
+    // Now for the (normalized) cdf
+    Array VTcumv; // Initialize cdf (which will be of length _numParticles+1
+    NR::cdf(VTcumv, VTv);
+
+    // Write new points to file
+    DustGridPlotFile plotPrePoints(this, "ds_pregridpoints");
+    DustGridPlotFile plotPoints(this, "ds_gridpoints");
+    plotPrePoints.writeLine("#X\tY\tZ\tV*T");
+    plotPoints.writeLine("#X\tY\tZ");
+
+    // Save the old points (usually drawn from the dust distribution)
+    int oldNumParticles = _numParticles;
+    _numParticles = _totalNumParticles; // Increase amount of particles to the total specified in the ski file
+    vector<Vec> rv(_numParticles); // Position vector for all the new grid points
+    for (int m=0; m<oldNumParticles; m++)
+    {
+        rv[m] = _mesh->particlePosition(m); // Copy old particle position
+        plotPrePoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z(), VTv[m]); // Write xyz and a V*T value
+        plotPoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z()); // Write xyz
+    }
+    // Now pick new points according to the temperature distribution
+    for (int m=oldNumParticles; m<_numParticles; m++)
+    {
+        int cellidx = NR::locate_clip(VTcumv, _random->uniform()); // Determine cell (where we generate new point)
+        rv[m] = _mesh->randomPosition(_random, cellidx); // Generate random location in cell
+        plotPoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z());
+    }
+
+    // With the new particle positions, generate a new voronoi mesh
+    log->info("Computing Voronoi tesselation for " + QString::number(oldNumParticles)
+                  + " random particles from the old distribution, and "
+                  + QString::number(_numParticles-oldNumParticles)
+                  + " particles distributed according to a temperature distribution");
+    delete _mesh; // Delete old mesh
+    _mesh = new VoronoiMesh(rv, extent(), log, _relaxationSteps);
 }
 
 //////////////////////////////////////////////////////////////////////

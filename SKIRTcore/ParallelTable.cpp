@@ -65,7 +65,8 @@ void ParallelTable::initialize(QString name, WriteState writeOn, const ProcessAs
 
 void ParallelTable::initialize(QString name, WriteState writeOn, int columns, int rows, PeerToPeerCommunicator* comm)
 {
-    if (_initialized) throw FATALERROR(_name + ": A ParallelTable can only be initialized once.");
+    // initialize is called again for dynamic grid, making use of the resize function (which puts the values back to 0)
+    //if (_initialized) throw FATALERROR(_name + ": A ParallelTable can only be initialized once.");
 
     // Set the data members
     _name = name;

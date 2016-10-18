@@ -65,6 +65,11 @@ class MonteCarloSimulation : public Simulation
     Q_CLASSINFO("Default", "no")
     Q_CLASSINFO("Silent", "true")
 
+    Q_CLASSINFO("Property", "prePackages")
+    Q_CLASSINFO("Title", "the amount of packages used to determine the dynamic grid")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("Default", "0")
+
     //============= Construction - Setup - Destruction =============
 
 protected:
@@ -177,6 +182,12 @@ public:
 
     /** Returns the flag that indicates whether continuous scattering should be used. */
     Q_INVOKABLE bool continuousScattering() const;
+
+    /** Sets the amount of prepackages used to determine the dynamic grid */
+    Q_INVOKABLE void setPrePackages(double value);
+
+    /** Returns the amount of prepackages used to determine the dynamic grid */
+    Q_INVOKABLE double prePackages() const;
 
 
     //======================== Other Functions =======================
@@ -381,6 +392,9 @@ protected:
         phase function. */
     void simulatescattering(PhotonPackage* pp);
 
+    /** This function reinitialises the grid, by drawing extra points from a temperature distribution. */
+    void dynamicGrid();
+
     /** This function performs the final step in a Monte Carlo simulation. It writes out the useful
         information in the instrument system and in the dust system so that the results of the
         simulation can be analyzed. */
@@ -402,6 +416,7 @@ protected:
     WavelengthGrid* _lambdagrid;
     StellarSystem* _ss;
     DustSystem* _ds;
+    double _prePackages;        // amount of prepackages used to determine the dynamic grid
 
 protected:
     // *** data members initialized by this class through the setChunkParams() function ***
@@ -417,6 +432,9 @@ private:
     QString _phase;         // a string identifying the photon shooting phase for use in the log message
     std::atomic<quint64> _Ndone;  // the number of photon packages processed so far (for all wavelengths)
     QTime _timer;           // measures the time elapsed since the most recent log message
+
+protected:
+    double _totalPackages;      // Cache the amount of packages in the stellar shooting phase
 };
 
 ////////////////////////////////////////////////////////////////////

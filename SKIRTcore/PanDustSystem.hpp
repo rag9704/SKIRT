@@ -277,6 +277,9 @@ public:
         otherwise return a nullptr? )) */
     const ProcessAssigner* assigner() const;
 
+    /** This function reinitialises the grid, used when building a dynamic grid */
+    void reinitialiseGrid();
+
     //======================== Data Members ========================
 
 private:
