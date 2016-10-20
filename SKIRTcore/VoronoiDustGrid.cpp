@@ -55,7 +55,7 @@ void VoronoiDustGrid::setupSelfBefore()
         _totalNumParticles = _numParticles;
         _numParticles = ceil((1-_tempDistFraction)*_totalNumParticles);
         log->info("Prepackage phase: Using " + QString::number(_numParticles) + " of the total "+
-                  QString::number(_totalNumParticles)+" photon packages to calculate a temperature distribution.");
+                  QString::number(_totalNumParticles)+" grid points to calculate a temperature distribution.");
     }
 
     // Determine an appropriate set of particles and construct the Voronoi mesh
@@ -359,9 +359,9 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     // Start with a V*T vector
     Array VTv; // Volume * Temperature for every cell (_numParticles is the old grid size)
     VTv.resize(_numParticles);
+    ds->sumResults(); // To call switchScheme (else there is an error)
     for(int m=0; m<_numParticles; m++)
     {
-        ds->sumResults();
         // indicative temperature = average population equilibrium temperature weighed by population mass fraction
         const Array& Jv = ds->meanintensityv(m);
         // average over dust components
@@ -407,7 +407,7 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     for (int m=0; m<oldNumParticles; m++)
     {
         rv[m] = _mesh->particlePosition(m); // Copy old particle position
-        plotPrePoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z(), VTv[m]); // Write xyz and a V*T value
+        plotPrePoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z(), VTv[m]/_mesh->volume(m)); // Write xyz and a V*T value
         plotPoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z()); // Write xyz
     }
     // Now pick new points according to the temperature distribution

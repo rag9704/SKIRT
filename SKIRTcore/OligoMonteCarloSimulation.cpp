@@ -68,6 +68,14 @@ OligoDustSystem* OligoMonteCarloSimulation::dustSystem() const
 
 void OligoMonteCarloSimulation::runSelf()
 {
+    // If there are prepackages (used to do a coarse simulation to determine the dynamic grid)
+    if(_prePackages > 0)
+    {
+        setPackages(_prePackages);
+        runstellaremission();
+        dynamicGrid();
+        setPackages(_totalPackages);
+    }
     runstellaremission();
 
     write();
