@@ -74,7 +74,7 @@ void OligoMonteCarloSimulation::runSelf()
         setPackages(_prePackages);
         runstellaremission();
         dynamicGrid();
-        setPackages(_totalPackages);
+        setPackages(_totalPackages); // Use the cached variable to go back to the normal amount of packages
     }
     runstellaremission();
 

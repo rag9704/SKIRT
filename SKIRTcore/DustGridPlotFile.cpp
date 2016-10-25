@@ -42,13 +42,18 @@ void DustGridPlotFile::writePoint(double x, double y, double z)
 
 ////////////////////////////////////////////////////////////////////
 
-void DustGridPlotFile::writePoint(double x, double y, double z, double v)
+void DustGridPlotFile::writePoint(double x, double y, double z, Array v)
 {
     if (!_out.is_open()) return;
     x = _units->olength(x);
     y = _units->olength(y);
     z = _units->olength(z);
-    _out << x << '\t' << y << '\t' << z << '\t' << v << '\n';
+    _out << x << '\t' << y << '\t' << z;
+    for (unsigned int i=0;i<v.size();i++)
+    {
+        _out << '\t' << v[i];
+    }
+    _out << '\n';
 }
 
 ////////////////////////////////////////////////////////////////////

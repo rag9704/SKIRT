@@ -36,9 +36,9 @@ public:
         constructor to convert the coordinates to output units. */
     void writePoint(double x, double y, double z);
 
-    /** This function outputs the specified 3D point together with a value, using the Units object
-        specified in the constructor to convert the coordinates to output units. */
-    void writePoint(double x, double y, double z, double v);
+    /** This function outputs the specified 3D point together with one or more values. The position
+        uses the Units object specified in the constructor to convert the coordinates to output units. */
+    void writePoint(double x, double y, double z, Array v);
 
     /** This function outputs the specified 2D line segment, using the Units object specified in
         the constructor to convert the coordinates to output units. */

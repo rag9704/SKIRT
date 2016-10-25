@@ -3,6 +3,7 @@
 ////       © Astronomical Observatory, Ghent University         ////
 ///////////////////////////////////////////////////////////////// */
 
+#include <cmath>
 #include "DustDistribution.hpp"
 #include "DustGridPlotFile.hpp"
 #include "DustParticleInterface.hpp"
@@ -20,6 +21,7 @@
 #include "TextOutFile.hpp"
 #include "DustMix.hpp"
 #include "NR.hpp"
+#include "WavelengthGrid.hpp"
 
 using namespace std;
 
@@ -351,6 +353,8 @@ void VoronoiDustGrid::path(DustGridPath* path) const
 
 void VoronoiDustGrid::drawFromTemperatureDistribution()
 {
+    if(_tempDistFraction == 0) // If we don't draw from a temperature distribution, return
+        return;
     Log* log = find<Log>();
     log->info("Drawing extra voronoi points from a temperature distribution.");
     DustSystem* ds = find<DustSystem>(); // Cache the dust system
@@ -359,36 +363,52 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     // Start with a V*T vector
     Array VTv; // Volume * Temperature for every cell (_numParticles is the old grid size)
     VTv.resize(_numParticles);
-    ds->sumResults(); // To call switchScheme (else there is an error)
-    for(int m=0; m<_numParticles; m++)
-    {
-        // indicative temperature = average population equilibrium temperature weighed by population mass fraction
-        const Array& Jv = ds->meanintensityv(m);
-        // average over dust components
-        double sumRho_h = 0;
-        double sumRhoT_h = 0;
-        for (int h=0; h<ds->Ncomp(); h++)
-        {
-            double rho_h = ds->density(m,h);
-            if (rho_h>0.0)
-            {
-                // average over dust populations within component
-                double sumMu_c = 0;
-                double sumMuT_c = 0;
-                for (int c=0; c<ds->mix(h)->Npop(); c++)
-                {
-                    double mu_c = ds->mix(h)->mu(c);
-                    double T_c = ds->mix(h)->equilibrium(Jv,c);
-                    sumMu_c += mu_c;
-                    sumMuT_c += mu_c * T_c;
-                }
-                double T_h = sumMuT_c / sumMu_c;
 
-                sumRho_h += rho_h;
-                sumRhoT_h += rho_h * T_h;
+    // Check if we are dealing with a panchromatic or oligochromatic simulation
+    bool pan = find<WavelengthGrid>()->issampledrange();
+    // Panchromatic: draw from temperature (fill VTv)
+    if(pan)
+    {
+        ds->sumResults(); // To call switchScheme (else there is an error)
+        for(int m=0; m<_numParticles; m++)
+        {
+            // indicative temperature = average population equilibrium temperature weighed by population mass fraction
+            const Array& Jv = ds->meanintensityv(m);
+            // average over dust components
+            double sumRho_h = 0;
+            double sumRhoT_h = 0;
+            for (int h=0; h<ds->Ncomp(); h++)
+            {
+                double rho_h = ds->density(m,h);
+                if (rho_h>0.0)
+                {
+                    // average over dust populations within component
+                    double sumMu_c = 0;
+                    double sumMuT_c = 0;
+                    for (int c=0; c<ds->mix(h)->Npop(); c++)
+                    {
+                        double mu_c = ds->mix(h)->mu(c);
+                        double T_c = ds->mix(h)->equilibrium(Jv,c);
+                        sumMu_c += mu_c;
+                        sumMuT_c += mu_c * T_c;
+                    }
+                    double T_h = sumMuT_c / sumMu_c;
+
+                    sumRho_h += rho_h;
+                    sumRhoT_h += rho_h * T_h;
+                }
             }
+            double T = sumRhoT_h / sumRho_h;
+            VTv[m] = _mesh->volume(m) * T; // V*T vector: volume * temperature
         }
-        VTv[m] = _mesh->volume(m) * sumRhoT_h / sumRho_h; // V*T vector: volume * temperature
+    }
+    else // Oligochromatic: use mean intensity instead, for the first wavelength
+    {
+        for(int m=0; m<_numParticles; m++)
+        {
+            const Array& Jv = ds->meanintensityv(m);
+            VTv[m] = _mesh->volume(m) * Jv[0]; // V*T vector: volume * mean intensity (first wavelength)
+        }
     }
     // Now for the (normalized) cdf
     Array VTcumv; // Initialize cdf (which will be of length _numParticles+1
@@ -396,9 +416,11 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
 
     // Write new points to file
     DustGridPlotFile plotPrePoints(this, "ds_pregridpoints");
-    DustGridPlotFile plotPoints(this, "ds_gridpoints");
-    plotPrePoints.writeLine("#X\tY\tZ\tV*T");
-    plotPoints.writeLine("#X\tY\tZ");
+    DustGridPlotFile plotNewPoints(this, "ds_newgridpoints");
+    DustGridPlotFile plotCdf(this, "ds_cdf");
+    plotPrePoints.writeLine("#X\tY\tZ\tT\tV\tamount of sampled points\tamount of sampled points per volume");
+    plotNewPoints.writeLine("#X\tY\tZ");
+    plotCdf.writeLine("#cellnr\tcumVT\tVT\tT\tV");
 
     // Save the old points (usually drawn from the dust distribution)
     int oldNumParticles = _numParticles;
@@ -407,15 +429,27 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     for (int m=0; m<oldNumParticles; m++)
     {
         rv[m] = _mesh->particlePosition(m); // Copy old particle position
-        plotPrePoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z(), VTv[m]/_mesh->volume(m)); // Write xyz and a V*T value
-        plotPoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z()); // Write xyz
+        plotCdf.writeLine(QString::number(m)+"\t"+QString::number(VTcumv[m])+"\t"+QString::number(VTv[m])+"\t"+
+                          QString::number(VTv[m]/_mesh->volume(m))+"\t"+QString::number(_mesh->volume(m)));
     }
+    Array nrSampledPoints(oldNumParticles); // How many new points sampled in old cell?
     // Now pick new points according to the temperature distribution
     for (int m=oldNumParticles; m<_numParticles; m++)
     {
         int cellidx = NR::locate_clip(VTcumv, _random->uniform()); // Determine cell (where we generate new point)
         rv[m] = _mesh->randomPosition(_random, cellidx); // Generate random location in cell
-        plotPoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z());
+        plotNewPoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z());
+        nrSampledPoints[cellidx] = nrSampledPoints[cellidx] + 1;
+    }
+    // Write out interesting properties about the old grid points
+    for (int m=0; m<oldNumParticles; m++)
+    {
+        Array values(4); // T, V and amount of sampled particles in cell
+        values[0] = VTv[m]/_mesh->volume(m);
+        values[1] = _mesh->volume(m);
+        values[2] = nrSampledPoints[m];
+        values[3] = nrSampledPoints[m]/_mesh->volume(m);
+        plotPrePoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z(), values); // Write xyz and T, V and nrsampledpoints
     }
 
     // With the new particle positions, generate a new voronoi mesh

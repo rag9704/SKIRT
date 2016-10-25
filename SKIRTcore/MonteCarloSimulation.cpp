@@ -64,6 +64,8 @@ void MonteCarloSimulation::setupSelfBefore()
     if (_prePackages < 0)
         throw FATALERROR("Number of prepackages is negative");
     // dust system is optional; nr of packages has a valid default
+    // Cache the total amount of packages
+    _totalPackages = _packages;
 }
 
 ////////////////////////////////////////////////////////////////////

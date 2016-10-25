@@ -37,8 +37,6 @@ void PanMonteCarloSimulation::setupSelfAfter()
     // properly size the array used to communicate between rundustXXX() and the corresponding parallel loop
     _Ncells = _pds ? _pds->Ncells() : 0;
     if (_pds && _pds->dustemission()) _Labsbolv.resize(_Ncells);
-    // Cache the total amount of packages
-    _totalPackages = packages();
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -100,7 +98,10 @@ void PanMonteCarloSimulation::runSelf()
         setPackages(_prePackages);
         runstellaremission();
         dynamicGrid();
-        setPackages(_totalPackages);
+        // properly resize the array used to communicate between rundustXXX() and the corresponding parallel loop
+        _Ncells = _pds ? _pds->Ncells() : 0;
+        if (_pds && _pds->dustemission()) _Labsbolv.resize(_Ncells);
+        setPackages(_totalPackages); // Use the cached variable to go back to the normal amount of packages
     }
     runstellaremission();
 
