@@ -299,3 +299,43 @@ void FullInstrument::write()
 }
 
 ////////////////////////////////////////////////////////////////////
+
+void FullInstrument::reset()
+{
+    // resize the detector arrays only when meaningful
+    int Nlambda = find<WavelengthGrid>()->Nlambda();
+
+    _ftrav.initialize(_Nframep, this);
+    _Ftrav.resize(Nlambda);
+    if (_dustsystem)
+    {
+        _fstrdirv.initialize(_Nframep, this);
+        _Fstrdirv.resize(Nlambda);
+        _fstrscav.initialize(_Nframep, this);
+        _Fstrscav.resize(Nlambda);
+        if (_dustemission)
+        {
+            _fdusdirv.initialize(_Nframep, this);
+            _Fdusdirv.resize(Nlambda);
+            _fdusscav.initialize(_Nframep, this);
+            _Fdusscav.resize(Nlambda);
+        }
+        if (_Nscatt > 0)
+        {
+            _fstrscavv.resize(_Nscatt);
+            for (auto& cube : _fstrscavv) cube.initialize(_Nframep, this);
+            _Fstrscavv.resize(_Nscatt, Nlambda);
+        }
+        if (_polarization)
+        {
+            _ftotQv.initialize(_Nframep, this);
+            _FtotQv.resize(Nlambda);
+            _ftotUv.initialize(_Nframep, this);
+            _FtotUv.resize(Nlambda);
+            _ftotVv.initialize(_Nframep, this);
+            _FtotVv.resize(Nlambda);
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////

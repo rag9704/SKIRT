@@ -74,3 +74,14 @@ SimpleInstrument::write()
 }
 
 ////////////////////////////////////////////////////////////////////
+
+void
+SimpleInstrument::reset()
+{
+    WavelengthGrid* wavelengthGrid = find<WavelengthGrid>();
+    int Nlambda = wavelengthGrid->Nlambda();
+    _Ftotv.resize(Nlambda);
+    _ftotv.initialize(_Nframep, this);
+}
+
+////////////////////////////////////////////////////////////////////

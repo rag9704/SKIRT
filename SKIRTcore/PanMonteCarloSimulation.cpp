@@ -18,6 +18,7 @@
 #include "TimeLogger.hpp"
 #include "Units.hpp"
 #include "FatalError.hpp"
+#include "InstrumentSystem.hpp"
 
 using namespace std;
 
@@ -102,6 +103,7 @@ void PanMonteCarloSimulation::runSelf()
         _Ncells = _pds ? _pds->Ncells() : 0;
         if (_pds && _pds->dustemission()) _Labsbolv.resize(_Ncells);
         setPackages(_totalPackages); // Use the cached variable to go back to the normal amount of packages
+        find<InstrumentSystem>()->reset(); // Reset the instruments
     }
     runstellaremission();
 

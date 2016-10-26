@@ -7,6 +7,7 @@
 #include "OligoMonteCarloSimulation.hpp"
 #include "OligoWavelengthGrid.hpp"
 #include "StellarSystem.hpp"
+#include "InstrumentSystem.hpp"
 
 using namespace std;
 
@@ -75,6 +76,7 @@ void OligoMonteCarloSimulation::runSelf()
         runstellaremission();
         dynamicGrid();
         setPackages(_totalPackages); // Use the cached variable to go back to the normal amount of packages
+        find<InstrumentSystem>()->reset(); // Reset the instruments
     }
     runstellaremission();
 

@@ -60,6 +60,9 @@ protected:
         \f$ (typical unit is \f$\text{W}\,\text{m}^{-2}\f$). */
     void write();
 
+    /** This function resets the detector, putting all fluxes to zero */
+    void reset();
+
     //======================== Data Members ========================
 
 private:

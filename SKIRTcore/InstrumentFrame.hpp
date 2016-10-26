@@ -133,6 +133,9 @@ public:
         index. */
     void calibrateAndWriteData(int ell);
 
+    /** This function resets the detector, putting all fluxes to zero */
+    void reset();
+
 private:
     /** This private function properly calibrates and outputs the instrument data. It is invoked
         from the public calibrateAndWriteData() function. */

@@ -90,6 +90,9 @@ public:
         wavelength, using filenames that include the wavelength index \f$\ell\f$. */
     void write();
 
+    /** This function resets the detector, putting all fluxes to zero */
+    void reset();
+
     //======================== Data Members ========================
 
 private:

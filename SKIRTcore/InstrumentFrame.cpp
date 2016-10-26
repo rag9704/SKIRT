@@ -261,3 +261,9 @@ void InstrumentFrame::calibrateAndWriteDataFrames(int ell, QList<Array*> farrays
 }
 
 ////////////////////////////////////////////////////////////////////
+
+void InstrumentFrame::reset()
+{
+    if (_writeTotal) _ftotv.resize(_Nframep);
+    if (_writeStellarComps) _fcompvv.resize(find<StellarSystem>()->Ncomp(), _Nframep);
+}

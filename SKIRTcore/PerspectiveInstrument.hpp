@@ -205,6 +205,9 @@ protected:
         For more information see \ref PerInstr. */
     void write();
 
+    /** This function resets the detector, putting all fluxes to zero */
+    void reset();
+
     //======================== Data Members ========================
 
 private:

@@ -60,3 +60,10 @@ SEDInstrument::write()
 }
 
 ////////////////////////////////////////////////////////////////////
+
+void
+SEDInstrument::reset()
+{
+    int Nlambda = find<WavelengthGrid>()->Nlambda();
+    _Ftotv.resize(Nlambda);
+}

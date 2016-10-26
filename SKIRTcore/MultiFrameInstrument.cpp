@@ -99,3 +99,11 @@ void MultiFrameInstrument::write()
 }
 
 ////////////////////////////////////////////////////////////////////
+
+void MultiFrameInstrument::reset()
+{
+    for (int ell=0; ell<_frames.size(); ell++)
+    {
+        _frames[ell]->reset();
+    }
+}

@@ -52,6 +52,9 @@ public:
         function for each of the instruments. */
     void write();
 
+    /** This function resets all detectors, putting all fluxes to zero */
+    void reset();
+
     //======================== Data Members ========================
 
 private:

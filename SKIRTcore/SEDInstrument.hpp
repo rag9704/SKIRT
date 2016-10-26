@@ -39,6 +39,9 @@ protected:
         See SimpleInstrument::write() for more information. */
     void write();
 
+    /** This function resets the detector, putting all fluxes to zero */
+    void reset();
+
     //======================== Data Members ========================
 
 private:

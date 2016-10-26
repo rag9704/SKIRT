@@ -86,6 +86,9 @@ public:
         files. Its implementation must be provided in a subclass. */
     virtual void write() = 0;
 
+    /** This function resets the detector, putting all fluxes to zero */
+    virtual void reset() = 0;
+
     /** This function is provided for use in subclasses. It calculates and returns the optical
         depth over the specified distance along the current path of the specified photon package,
         at the photon package's wavelength. If the distance is not specified, the complete path is

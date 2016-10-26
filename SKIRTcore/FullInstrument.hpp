@@ -115,6 +115,9 @@ protected:
         actual units. */
     void write();
 
+    /** This function resets the detector, putting all fluxes to zero */
+    void reset();
+
     //======================== Data Members ========================
 
 private:
