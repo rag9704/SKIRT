@@ -22,6 +22,7 @@
 #include "DustMix.hpp"
 #include "NR.hpp"
 #include "WavelengthGrid.hpp"
+#include "OligoDustSystem.hpp"
 
 using namespace std;
 
@@ -51,11 +52,11 @@ void VoronoiDustGrid::setupSelfBefore()
     Log* log = find<Log>();
 
     // Prepackage phase (for setting up the dynamic grid)
-    if(_tempDistFraction > 0)
+    _totalNumParticles = _numParticles;
+    if(_tempDistFraction+_tempGradFraction > 0)
     {
         // Use a fraction of the total particles for the prepackage phase
-        _totalNumParticles = _numParticles;
-        _numParticles = ceil((1-_tempDistFraction)*_totalNumParticles);
+        _numParticles = ceil((1-_tempDistFraction)*(1-_tempGradFraction)*_totalNumParticles);
         log->info("Prepackage phase: Using " + QString::number(_numParticles) + " of the total "+
                   QString::number(_totalNumParticles)+" grid points to calculate a temperature distribution.");
     }
@@ -237,6 +238,17 @@ void VoronoiDustGrid::setupSelfBefore()
 
 //////////////////////////////////////////////////////////////////////
 
+void VoronoiDustGrid::setupSelfAfter()
+{
+    if(!find<WavelengthGrid>()->issampledrange()) // OLIGO
+    {
+        if(_tempDistFraction > 0 && !find<OligoDustSystem>()->writeMeanIntensity())
+            throw FATALERROR("Set writeMeanIntensity to true when drawing from a mean intensity distribution");
+    }
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void VoronoiDustGrid::setNumParticles(int value)
 {
     _numParticles = value;
@@ -289,6 +301,20 @@ void VoronoiDustGrid::setTempDistFraction(double value)
 double VoronoiDustGrid::tempDistFraction() const
 {
     return _tempDistFraction;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void VoronoiDustGrid::setTempGradFraction(double value)
+{
+    _tempGradFraction = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double VoronoiDustGrid::tempGradFraction() const
+{
+    return _tempGradFraction;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -353,7 +379,7 @@ void VoronoiDustGrid::path(DustGridPath* path) const
 
 void VoronoiDustGrid::drawFromTemperatureDistribution()
 {
-    if(_tempDistFraction == 0) // If we don't draw from a temperature distribution, return
+    if(_tempDistFraction+_tempGradFraction == 0) // If we don't draw from a dynamic distribution, return
         return;
     Log* log = find<Log>();
     log->info("Drawing extra voronoi points from a temperature distribution.");
@@ -404,6 +430,9 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     }
     else // Oligochromatic: use mean intensity instead, for the first wavelength
     {
+        log->info("Before meanintensity");
+        ds->meanintensityv(0);
+        log->info("After meanintensity");
         for(int m=0; m<_numParticles; m++)
         {
             const Array& Jv = ds->meanintensityv(m);
@@ -413,6 +442,29 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     // Now for the (normalized) cdf
     Array VTcumv; // Initialize cdf (which will be of length _numParticles+1
     NR::cdf(VTcumv, VTv);
+
+    // Temperature gradient
+    Array VgradTv; // V*gradT vector
+    VgradTv.resize(_numParticles);
+    if (_tempGradFraction > 0)
+    {
+        // Loop over all particles
+        for (int m=0; m<_numParticles; m++)
+        {
+            double totalgrad = 0; // The sum of all individual gradients
+            vector<int> neighborID = _mesh->getNeighbors(m);
+            int nrNeighbors = neighborID.size();
+            for (int mn=0; mn<nrNeighbors; mn++)
+            {
+                totalgrad += abs((VTv[mn]/_mesh->volume(mn)) - (VTv[m]/_mesh->volume(m))); // temperature difference
+            }
+            VgradTv[m] = totalgrad/nrNeighbors; // Mean gradient
+        }
+    }
+
+    // normalized cdf
+    Array VgradTcumv; // Initialize cdf (which will be of length _numParticles+1
+    NR::cdf(VgradTcumv, VgradTv);
 
     // Write new points to file
     DustGridPlotFile plotPrePoints(this, "ds_pregridpoints");
@@ -434,9 +486,18 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     }
     Array nrSampledPoints(oldNumParticles); // How many new points sampled in old cell?
     // Now pick new points according to the temperature distribution
-    for (int m=oldNumParticles; m<_numParticles; m++)
+    int tempDistNumParticles = floor(_numParticles*_tempDistFraction); // Amount of particles drawn from temperature
+    for (int m=oldNumParticles; m<oldNumParticles+tempDistNumParticles; m++)
     {
         int cellidx = NR::locate_clip(VTcumv, _random->uniform()); // Determine cell (where we generate new point)
+        rv[m] = _mesh->randomPosition(_random, cellidx); // Generate random location in cell
+        plotNewPoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z());
+        nrSampledPoints[cellidx] = nrSampledPoints[cellidx] + 1;
+    }
+    // Now pick new points according to the temperature gradient distribution
+    for (int m=oldNumParticles+tempDistNumParticles; m<_numParticles; m++)
+    {
+        int cellidx = NR::locate_clip(VgradTcumv, _random->uniform()); // Determine cell (where we generate new point)
         rv[m] = _mesh->randomPosition(_random, cellidx); // Generate random location in cell
         plotNewPoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z());
         nrSampledPoints[cellidx] = nrSampledPoints[cellidx] + 1;
@@ -454,9 +515,11 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
 
     // With the new particle positions, generate a new voronoi mesh
     log->info("Computing Voronoi tesselation for " + QString::number(oldNumParticles)
-                  + " random particles from the old distribution, and "
-                  + QString::number(_numParticles-oldNumParticles)
-                  + " particles distributed according to a temperature distribution");
+                  + " random particles from the old distribution, "
+                  + QString::number(tempDistNumParticles)
+                  + " particles distributed according to a temperature distribution, and "
+                  + QString::number(_numParticles-oldNumParticles-tempDistNumParticles)
+                  + " particles distribution according to a temperature gradient distribution.");
     delete _mesh; // Delete old mesh
     _mesh = new VoronoiMesh(rv, extent(), log, _relaxationSteps);
 }

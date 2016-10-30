@@ -675,6 +675,14 @@ Position VoronoiMesh::randomPosition(Random* random, int m) const
 
 //////////////////////////////////////////////////////////////////////
 
+std::vector<int> VoronoiMesh::getNeighbors(int m)
+{
+    if (m < 0 || m >= _Ncells) throw FATALERROR("Cell index out of range: " + QString::number(m));
+    return _cells[m]->neighbors();
+}
+
+//////////////////////////////////////////////////////////////////////
+
 bool VoronoiMesh::isPointClosestTo(Vec r, int m, const vector<int>& ids) const
 {
     double target = _cells[m]->squaredDistanceTo(r);

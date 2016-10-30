@@ -208,6 +208,9 @@ public:
     */
     Position randomPosition(Random* random, int m) const;
 
+    /** This function returns the indices of the neighboring cells, given a particular cell index. */
+    std::vector<int> getNeighbors(int m);
+
 private:
     /** This function returns true if the specified point is closer to the particle
         defining the cell with index \em m than to all of the particles defining the cells with the

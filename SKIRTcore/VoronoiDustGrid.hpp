@@ -52,7 +52,13 @@ class VoronoiDustGrid : public BoxDustGrid
     Q_CLASSINFO("Property", "tempDistFraction")
     Q_CLASSINFO("Title", "the percentage of grid particles drawn from a temperature distribution")
     Q_CLASSINFO("MinValue", "0")
-    Q_CLASSINFO("MaxValue", "0.999")
+    Q_CLASSINFO("MaxValue", "0.99999")
+    Q_CLASSINFO("Default", "0")
+
+    Q_CLASSINFO("Property", "tempGradFraction")
+    Q_CLASSINFO("Title", "the percentage of grid particles drawn from a temperature gradient distribution")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("MaxValue", "0.99999")
     Q_CLASSINFO("Default", "0")
 
     Q_CLASSINFO("Property", "voronoiMeshFile")
@@ -81,6 +87,10 @@ protected:
         allows to efficiently generate random points drawn from this probability distribution. Once
         the particles have been generated, the foam is discarded. */
     void setupSelfBefore();
+
+    /** This function makes sure that we only use the meanintensity when writemeanintensity is set to
+        true. */
+    void setupSelfAfter();
 
     //======== Setters & Getters for Discoverable Attributes =======
 
@@ -115,6 +125,12 @@ public:
 
     /** Returns the fraction of grid particles drawn from a temperature distribution */
     Q_INVOKABLE double tempDistFraction() const;
+
+    /** Sets the fraction of grid particles drawn from a temperature distribution */
+    Q_INVOKABLE void setTempGradFraction(double value);
+
+    /** Returns the fraction of grid particles drawn from a temperature distribution */
+    Q_INVOKABLE double tempGradFraction() const;
 
     /** Sets the file containing the Voronoi particle locations in case \em distribution has the
         value \em File. */
@@ -161,6 +177,7 @@ private:
     Distribution _distribution;
     int _relaxationSteps;
     double _tempDistFraction;
+    double _tempGradFraction;
     VoronoiMeshFile* _meshfile;
 
     // data members initialized during setup
