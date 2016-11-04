@@ -450,6 +450,7 @@ namespace
         PeerToPeerCommunicator* _comm;
         double xbase, ybase, zbase, xpsize, ypsize, zpsize, xcenter, ycenter, zcenter;
         int Nmaps;
+        QString _filenameSuffix;
 
         // data members initialized in setup()
         bool xd, yd, zd;  // direction of coordinate plane (110, 101, 011)
@@ -460,7 +461,7 @@ namespace
 
     public:
         // constructor
-        WriteTempCut(const PanDustSystem* ds)
+        WriteTempCut(const PanDustSystem* ds, QString filenameSuffix="")
         {
             _ds = ds;
             _cellAssigner = ds->assigner();
@@ -486,6 +487,7 @@ namespace
             for (int h=0; h<_ds->Ncomp(); h++) Nmaps += _ds->mix(h)->Npop();
 
             tempv.resize(Np*Np*Nmaps);
+            _filenameSuffix = filenameSuffix;
         }
 
         // setup for calculating a specific coordinate plane
@@ -544,7 +546,7 @@ namespace
             // If we didn't have all the cells, sum the results first
             if (_dataParallel) _comm->sum(tempv);
 
-            QString filename = "ds_temp" + plane;
+            QString filename = "ds_temp" + plane + _filenameSuffix;
             Image image(_ds, Np, Np, Nmaps, xd?xpsize:ypsize, zd?zpsize:ypsize,
                         xd?xcenter:ycenter, zd?zcenter:ycenter, "temperature");
             image.saveto(_ds, tempv, filename, "dust temperatures");
@@ -565,13 +567,14 @@ namespace
         DustGrid* _grid;
         Units* _units;
         int _Ncells;
+        QString _filenameSuffix;
 
         // results vectors, properly sized in constructor
         Array _Mv, _Tv;
 
     public:
         // constructor
-        WriteTempData(const PanDustSystem* ds)
+        WriteTempData(const PanDustSystem* ds, QString filenameSuffix="")
         {
             _ds = ds;
             _grid = ds->dustGrid();
@@ -579,6 +582,7 @@ namespace
             _Ncells = ds->Ncells();
             _Mv.resize(_Ncells);
             _Tv.resize(_Ncells);
+            _filenameSuffix = filenameSuffix;
         }
 
         // the parallized loop body; calculates the results for a single dust cell
@@ -632,7 +636,7 @@ namespace
             }
 
             // Create a text file
-            TextOutFile file(_ds, "ds_celltemps", "dust cell temperatures");
+            TextOutFile file(_ds, "ds_celltemps"+_filenameSuffix, "dust cell temperatures");
 
             // Write the header
             file.addColumn("dust mass in cell (" + _units->umass() + ")");
@@ -649,9 +653,9 @@ namespace
 
 ////////////////////////////////////////////////////////////////////
 
-void PanDustSystem::write() const
+void PanDustSystem::write(QString filenameSuffix) const
 {
-    DustSystem::write();
+    DustSystem::write(filenameSuffix);
 
     PeerToPeerCommunicator* comm = find<PeerToPeerCommunicator>();
     bool dataParallel = comm->dataParallel();
@@ -663,7 +667,7 @@ void PanDustSystem::write() const
         Units* units = find<Units>();
 
         // Create a text file
-        TextOutFile file(this, "ds_isrf", "ISRF");
+        TextOutFile file(this, "ds_isrf"+filenameSuffix, "ISRF");
 
         // Write the header
         file.writeLine("# Mean field intensities for all dust cells with nonzero absorption");
@@ -727,7 +731,7 @@ void PanDustSystem::write() const
         // Output temperature map(s) along coordinate axes
         {
             // Construct a private class instance to do the work (parallelized)
-            WriteTempCut wt(this);
+            WriteTempCut wt(this, filenameSuffix);
 
             // Get the dimension of the dust grid
             int dimDust = _grid->dimension();
@@ -764,7 +768,7 @@ void PanDustSystem::write() const
             find<Log>()->info("Calculating indicative dust temperatures for each cell...");
 
             // Construct a private class instance to do the work (parallelized)
-            WriteTempData wt(this);
+            WriteTempData wt(this, filenameSuffix);
 
             // Call the body on the right cells. If everything is available, no unnecessary communication will be done.
             if (dataParallel)

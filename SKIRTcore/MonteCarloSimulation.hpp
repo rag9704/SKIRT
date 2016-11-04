@@ -397,8 +397,8 @@ protected:
 
     /** This function performs the final step in a Monte Carlo simulation. It writes out the useful
         information in the instrument system and in the dust system so that the results of the
-        simulation can be analyzed. */
-    void write();
+        simulation can be analyzed. The filenameSuffix gets added to the end of the standard filename. */
+    void write(QString filenameSuffix = "");
 
     //======================== Data Members ========================
 

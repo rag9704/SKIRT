@@ -977,13 +977,13 @@ double DustSystem::opticaldepth(PhotonPackage* pp, double distance)
 
 ////////////////////////////////////////////////////////////////////
 
-void DustSystem::write() const
+void DustSystem::write(QString filenameSuffix) const
 {
     // If requested, output statistics on the number of cells crossed
     if (_writeCellsCrossed)
     {
         // Create a text file
-        TextOutFile file(this, "ds_crossed", "number of cells crossed");
+        TextOutFile file(this, "ds_crossed"+filenameSuffix, "number of cells crossed");
 
         // Write the header
         file.writeLine("# total number of cells in grid: " + QString::number(_Ncells));

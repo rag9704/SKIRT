@@ -584,11 +584,11 @@ void MonteCarloSimulation::dynamicGrid()
 
 ////////////////////////////////////////////////////////////////////
 
-void MonteCarloSimulation::write()
+void MonteCarloSimulation::write(QString filenameSuffix)
 {
     TimeLogger logger(_log, "writing results");
-    if (_is) _is->write();
-    if (_ds) _ds->write();
+    if (_is && filenameSuffix=="") _is->write(); // Only write out results at end of simulation (no suffix)
+    if (_ds) _ds->write(filenameSuffix);
 }
 
 ////////////////////////////////////////////////////////////////////

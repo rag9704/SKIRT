@@ -105,6 +105,7 @@ namespace
         Log* _log;
         double xbase, ybase, zbase, xpsize, ypsize, zpsize, xcenter, ycenter, zcenter;
         int Nlambda;
+        QString _filenameSuffix;
 
         // data members initialized in setup()
         bool xd, yd, zd;  // direction of coordinate plane (110, 101, 011)
@@ -115,7 +116,7 @@ namespace
 
     public:
         // constructor
-        WriteMeanIntensityCut(const OligoDustSystem* ds)
+        WriteMeanIntensityCut(const OligoDustSystem* ds, QString filenameSuffix="")
         {
             _ds = ds;
             _grid = ds->dustGrid();
@@ -136,6 +137,7 @@ namespace
 
             Nlambda = _ds->find<WavelengthGrid>()->Nlambda();
             Jv.resize(Np*Np*Nlambda);
+            _filenameSuffix = filenameSuffix;
         }
 
         // setup for calculating a specific coordinate plane
@@ -178,7 +180,7 @@ namespace
         // Write the results to a FITS file with an appropriate name
         void write()
         {
-            QString filename = "ds_J" + plane;
+            QString filename = "ds_J" + plane + _filenameSuffix;
             Image image(_ds, Np, Np, Nlambda, xd?xpsize:ypsize, zd?zpsize:ypsize,
                         xd?xcenter:ycenter, zd?zcenter:ycenter, "wavelengthsurfacebrightness");
             image.saveto(_ds, Jv, filename, "wavelengthsurfacebrightness");
@@ -188,9 +190,9 @@ namespace
 
 ////////////////////////////////////////////////////////////////////
 
-void OligoDustSystem::write() const
+void OligoDustSystem::write(QString filenameSuffix) const
 {
-    DustSystem::write();
+    DustSystem::write(filenameSuffix);
 
     // Perform the calculations only at the root
     if (_writeMeanIntensity && find<PeerToPeerCommunicator>()->isRoot())
@@ -201,7 +203,7 @@ void OligoDustSystem::write() const
         // Output map(s) along coordinate axes
         {
             // Construct a private class instance to do the work (parallelized)
-            WriteMeanIntensityCut wt(this);
+            WriteMeanIntensityCut wt(this, filenameSuffix);
 
             // Get the dimension of the dust grid
             int dimDust = _grid->dimension();

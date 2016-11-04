@@ -352,8 +352,8 @@ public:
         path length (measured in the number of cells crossed). This virtual function can be
         overridden in a subclass to write out additional results of the simulation stored in the
         dust system. In that case, the overriding function must also call the implementation in
-        this base class. */
-    virtual void write() const;
+        this base class. The filenameSuffix gets added to the end of the filename. */
+    virtual void write(QString filenameSuffix = "") const;
 
     /** This pure virtual function must be implemented in each subclass to indicate whether dust
         emission is turned on for this dust system. The function returns true if dust emission is

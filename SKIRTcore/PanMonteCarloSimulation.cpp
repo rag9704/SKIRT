@@ -98,6 +98,7 @@ void PanMonteCarloSimulation::runSelf()
     {
         setPackages(_prePackages);
         runstellaremission();
+        write("_prepackage"); // Write out current results as prepackage results
         dynamicGrid();
         // properly resize the array used to communicate between rundustXXX() and the corresponding parallel loop
         _Ncells = _pds ? _pds->Ncells() : 0;

@@ -267,7 +267,7 @@ public:
         indicative dust temperature is defined as the mean temperature (calculated as described above)
         averaged over all dust populations (weighed by mass in the dust mix) and all dust components
         (weighed by density in the dust cell). */
-    void write() const;
+    void write(QString filenameSuffix = "") const;
 
     /** This function returns the process assigner for this dust system. The process assigner is
         the object that assigns different dust cells to different processes, to parallelize the
