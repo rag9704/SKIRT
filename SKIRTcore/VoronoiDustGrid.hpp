@@ -49,16 +49,22 @@ class VoronoiDustGrid : public BoxDustGrid
     Q_CLASSINFO("MinValue", "0")
     Q_CLASSINFO("Default", "0")
 
+    Q_CLASSINFO("Property", "preGridPointFraction")
+    Q_CLASSINFO("Title", "the percentage of grid particles used for the original grid (when using dynamic grids)")
+    Q_CLASSINFO("MinValue", "0.0001")
+    Q_CLASSINFO("MaxValue", "1")
+    Q_CLASSINFO("Default", "0.2")
+
     Q_CLASSINFO("Property", "tempDistFraction")
     Q_CLASSINFO("Title", "the percentage of grid particles drawn from a temperature distribution")
     Q_CLASSINFO("MinValue", "0")
-    Q_CLASSINFO("MaxValue", "0.99999")
+    Q_CLASSINFO("MaxValue", "1")
     Q_CLASSINFO("Default", "0")
 
     Q_CLASSINFO("Property", "tempGradFraction")
     Q_CLASSINFO("Title", "the percentage of grid particles drawn from a temperature gradient distribution")
     Q_CLASSINFO("MinValue", "0")
-    Q_CLASSINFO("MaxValue", "0.99999")
+    Q_CLASSINFO("MaxValue", "1")
     Q_CLASSINFO("Default", "0")
 
     Q_CLASSINFO("Property", "voronoiMeshFile")
@@ -121,6 +127,12 @@ public:
     Q_INVOKABLE int relaxationSteps() const;
 
     /** Sets the fraction of grid particles drawn from a temperature distribution */
+    Q_INVOKABLE void setPreGridPointFraction(double value);
+
+    /** Returns the fraction of grid particles drawn from a temperature distribution */
+    Q_INVOKABLE double preGridPointFraction() const;
+
+    /** Sets the fraction of grid particles drawn from a temperature distribution */
     Q_INVOKABLE void setTempDistFraction(double value);
 
     /** Returns the fraction of grid particles drawn from a temperature distribution */
@@ -176,6 +188,7 @@ private:
     int _numParticles;
     Distribution _distribution;
     int _relaxationSteps;
+    double _preGridPointFraction;
     double _tempDistFraction;
     double _tempGradFraction;
     VoronoiMeshFile* _meshfile;

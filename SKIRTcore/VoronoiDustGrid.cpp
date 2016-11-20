@@ -56,7 +56,7 @@ void VoronoiDustGrid::setupSelfBefore()
     if(_tempDistFraction+_tempGradFraction > 0)
     {
         // Use a fraction of the total particles for the prepackage phase
-        _numParticles = ceil((1-_tempDistFraction)*(1-_tempGradFraction)*_totalNumParticles);
+        _numParticles = ceil(_preGridPointFraction*_totalNumParticles);
         log->info("Prepackage phase: Using " + QString::number(_numParticles) + " of the total "+
                   QString::number(_totalNumParticles)+" grid points to calculate a temperature distribution.");
     }
@@ -291,6 +291,20 @@ int VoronoiDustGrid::relaxationSteps() const
 
 //////////////////////////////////////////////////////////////////////
 
+void VoronoiDustGrid::setPreGridPointFraction(double value)
+{
+    _preGridPointFraction = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double VoronoiDustGrid::preGridPointFraction() const
+{
+    return _preGridPointFraction;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void VoronoiDustGrid::setTempDistFraction(double value)
 {
     _tempDistFraction = value;
@@ -430,9 +444,7 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     }
     else // Oligochromatic: use mean intensity instead, for the first wavelength
     {
-        log->info("Before meanintensity");
         ds->meanintensityv(0);
-        log->info("After meanintensity");
         for(int m=0; m<_numParticles; m++)
         {
             const Array& Jv = ds->meanintensityv(m);
@@ -469,25 +481,40 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     // Write new points to file
     DustGridPlotFile plotPrePoints(this, "ds_pregridpoints");
     DustGridPlotFile plotNewPoints(this, "ds_newgridpoints");
-    DustGridPlotFile plotCdf(this, "ds_cdf");
     plotPrePoints.writeLine("#X\tY\tZ\tT\tV\tamount of sampled points\tamount of sampled points per volume");
     plotNewPoints.writeLine("#X\tY\tZ");
-    plotCdf.writeLine("#cellnr\tcumVT\tVT\tT\tV");
 
     // Save the old points (usually drawn from the dust distribution)
     int oldNumParticles = _numParticles;
     _numParticles = _totalNumParticles; // Increase amount of particles to the total specified in the ski file
     vector<Vec> rv(_numParticles); // Position vector for all the new grid points
-    for (int m=0; m<oldNumParticles; m++)
+
+    // Sample grid points according to the original distribution (usually dust distribution)
+    int dustNumParticles = floor(_numParticles*(1-_tempDistFraction-_tempGradFraction));
+    if (dustNumParticles > 0)
     {
-        rv[m] = _mesh->particlePosition(m); // Copy old particle position
-        plotCdf.writeLine(QString::number(m)+"\t"+QString::number(VTcumv[m])+"\t"+QString::number(VTv[m])+"\t"+
-                          QString::number(VTv[m]/_mesh->volume(m))+"\t"+QString::number(_mesh->volume(m)));
+        if (_distribution != DustDensity)
+            throw FATALERROR("Dynamic grid currently only supports Dust Density distributions!");
+        DustDistribution* dd = find<DustDistribution>();
+        for (int m=0; m<dustNumParticles; m++)
+        {
+            while (true)
+            {
+                Position p = dd->generatePosition();
+                if (extent().contains(p))       // discard any points outside of the domain
+                {
+                    rv[m] = p;
+                    plotNewPoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z());
+                    break;
+                }
+            }
+        }
     }
-    Array nrSampledPoints(oldNumParticles); // How many new points sampled in old cell?
+
+    Array nrSampledPoints(oldNumParticles); // How many new points sampled in old cell? (write to file)
     // Now pick new points according to the temperature distribution
     int tempDistNumParticles = floor(_numParticles*_tempDistFraction); // Amount of particles drawn from temperature
-    for (int m=oldNumParticles; m<oldNumParticles+tempDistNumParticles; m++)
+    for (int m=dustNumParticles; m<dustNumParticles+tempDistNumParticles; m++)
     {
         int cellidx = NR::locate_clip(VTcumv, _random->uniform()); // Determine cell (where we generate new point)
         rv[m] = _mesh->randomPosition(_random, cellidx); // Generate random location in cell
@@ -495,7 +522,7 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
         nrSampledPoints[cellidx] = nrSampledPoints[cellidx] + 1;
     }
     // Now pick new points according to the temperature gradient distribution
-    for (int m=oldNumParticles+tempDistNumParticles; m<_numParticles; m++)
+    for (int m=dustNumParticles+tempDistNumParticles; m<_numParticles; m++)
     {
         int cellidx = NR::locate_clip(VgradTcumv, _random->uniform()); // Determine cell (where we generate new point)
         rv[m] = _mesh->randomPosition(_random, cellidx); // Generate random location in cell
@@ -514,12 +541,12 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     }
 
     // With the new particle positions, generate a new voronoi mesh
-    log->info("Computing Voronoi tesselation for " + QString::number(oldNumParticles)
-                  + " random particles from the old distribution, "
+    log->info("Computing Voronoi tesselation for " + QString::number(dustNumParticles)
+                  + " random particles from a dust distribution, "
                   + QString::number(tempDistNumParticles)
                   + " particles distributed according to a temperature distribution, and "
-                  + QString::number(_numParticles-oldNumParticles-tempDistNumParticles)
-                  + " particles distribution according to a temperature gradient distribution.");
+                  + QString::number(_numParticles-dustNumParticles-tempDistNumParticles)
+                  + " particles distributed according to a temperature gradient distribution.");
     delete _mesh; // Delete old mesh
     _mesh = new VoronoiMesh(rv, extent(), log, _relaxationSteps);
 }
