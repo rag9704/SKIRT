@@ -277,6 +277,13 @@ public:
         otherwise return a nullptr? )) */
     const ProcessAssigner* assigner() const;
 
+    /** This function calculates the temperature for every grid cell, and stores it */
+    void calculateTemperature();
+
+    /** This function returns the temperature in cell m, given that it is already calculated
+        by calculateTemperature() */
+    double temperature(int m) const;
+
     /** This function reinitialises the grid, used when building a dynamic grid */
     void reinitialiseGrid();
 
@@ -301,6 +308,10 @@ private:
     ParallelTable _LabsDustvv;
     bool _haveLabsStel;     // true if absorbed stellar emission is relevant for this simulation
     bool _haveLabsDust;     // true if absorbed dust emission is relevant for this simulation
+
+    // Used for dynamic grid
+    bool _calculatedTemp;
+    Array _cellTempv; // Temperature of the cells (indexed on m)
 };
 
 //////////////////////////////////////////////////////////////////////

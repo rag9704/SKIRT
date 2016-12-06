@@ -33,7 +33,7 @@ using namespace std;
 PanDustSystem::PanDustSystem()
     : _dustemissivity(0), _dustlib(0), _emissionBias(0.5), _emissionBoost(1), _selfabsorption(false),
       _writeEmissivity(false), _writeTemp(true), _writeISRF(false), _cycles(0), _assigner(0), _Nlambda(0),
-      _haveLabsStel(false), _haveLabsDust(false)
+      _haveLabsStel(false), _haveLabsDust(false), _calculatedTemp(false)
 {
 }
 
@@ -784,6 +784,56 @@ void PanDustSystem::write(QString filenameSuffix) const
             wt.write();
         }
     }
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void PanDustSystem::calculateTemperature()
+{
+    sumResults(); // To call switchScheme (else there is an error) (maybe this should be called at the end again?)
+    _cellTempv.resize(_Ncells);
+    // Sum over all cells
+    for(int m=0; m<_Ncells; m++)
+    {
+        // indicative temperature = average population equilibrium temperature weighed by population mass fraction
+        const Array& Jv = meanintensityv(m);
+        // average over dust components
+        double sumRho_h = 0;
+        double sumRhoT_h = 0;
+        for (int h=0; h<_Ncomp; h++)
+        {
+            double rho_h = density(m,h);
+            if (rho_h>0.0)
+            {
+                // average over dust populations within component
+                double sumMu_c = 0;
+                double sumMuT_c = 0;
+                for (int c=0; c<mix(h)->Npop(); c++)
+                {
+                    double mu_c = mix(h)->mu(c);
+                    double T_c = mix(h)->equilibrium(Jv,c);
+                    sumMu_c += mu_c;
+                    sumMuT_c += mu_c * T_c;
+                }
+                double T_h = sumMuT_c / sumMu_c;
+
+                sumRho_h += rho_h;
+                sumRhoT_h += rho_h * T_h;
+            }
+        }
+        _cellTempv[m] = sumRhoT_h / sumRho_h;
+    }
+    _calculatedTemp = true;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double PanDustSystem::temperature(int m) const
+{
+    if (_calculatedTemp)
+        return _cellTempv[m];
+    else
+        throw FATALERROR("The temperature needs to be calculated before it is acquired");
 }
 
 //////////////////////////////////////////////////////////////////////

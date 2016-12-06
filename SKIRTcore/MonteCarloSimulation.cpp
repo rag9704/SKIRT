@@ -23,7 +23,9 @@
 #include "TimeLogger.hpp"
 #include "Units.hpp"
 #include "WavelengthGrid.hpp"
+// The following includes are used for dynamic casting and should not be included in the final build
 #include "VoronoiDustGrid.hpp"
+#include "TreeDustGrid.hpp"
 
 using namespace std;
 
@@ -575,6 +577,14 @@ void MonteCarloSimulation::dynamicGrid()
         // Make sure all DustSystem variables are reinitialized correctly (eg the absorption table)
         _ds->reinitialiseGrid();
         log->info("Reinitialized voronoi grid");
+    }
+    else if(dynamic_cast<TreeDustGrid*>(_ds->dustGrid()) != NULL)
+    {
+        TreeDustGrid* treeGrid = dynamic_cast<TreeDustGrid*>(_ds->dustGrid());
+        treeGrid->dynamicGrid();
+        // Make sure all DustSystem variables are reinitialized correctly (eg the absorption table)
+        _ds->reinitialiseGrid();
+        log->info("Reinitialized tree grid");
     }
     else
     {

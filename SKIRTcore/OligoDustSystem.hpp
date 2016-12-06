@@ -81,6 +81,11 @@ public:
         where a map is created for each wavelength in the global wavelength grid. */
     void write(QString filenameSuffix = "") const;
 
+    /** This function returns the temperature in cell m, given that it is already calculated
+        by calculateTemperature(). For an oligochramatic simulation, the "temperature" is defined
+        as the meanIntensity at the first wavelength. */
+    double temperature(int m) const;
+
     /** This function reinitialises the grid, used when building a dynamic grid */
     void reinitialiseGrid();
 

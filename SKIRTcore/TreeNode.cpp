@@ -182,6 +182,20 @@ void TreeNode::deleteneighbor(TreeNode::Wall wall, TreeNode* node)
 
 //////////////////////////////////////////////////////////////////////
 
+void TreeNode::deleteallneighbors()
+{
+    _neighbors.clear();
+}
+
+//////////////////////////////////////////////////////////////////////
+
+vector<TreeNode*> TreeNode::getneighbors(TreeNode::Wall wall)
+{
+    return _neighbors[wall];
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void TreeNode::makeneighbors(TreeNode::Wall wall1, TreeNode *node1, TreeNode *node2)
 {
     static const Wall complementingWall[] = { FRONT, BACK, RIGHT, LEFT, TOP, BOTTOM };

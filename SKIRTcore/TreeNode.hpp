@@ -119,6 +119,12 @@ public:
     /** This function deletes a node from the list of neighbors corresponding to a given wall. */
     void deleteneighbor(Wall wall, TreeNode* node);
 
+    /** This function clears the whole neighbor vector for all walls. */
+    void deleteallneighbors();
+
+    /** This function returns the vector of neighbors allong the given wall. */
+    std::vector<TreeNode*> getneighbors(Wall wall);
+
     /** This static function makes the two specified nodes neighbors by adding node2 as a neighbor
         to node1 at wall1, and adding node1 as a neighbor to node2 at the complementing wall
         (back/front, left/right, bottom/top). */

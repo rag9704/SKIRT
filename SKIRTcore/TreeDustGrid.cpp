@@ -8,6 +8,7 @@
 #include "DustDistribution.hpp"
 #include "DustGridPath.hpp"
 #include "DustGridPlotFile.hpp"
+#include "DustSystem.hpp"
 #include "FatalError.hpp"
 #include "Log.hpp"
 #include "NR.hpp"
@@ -68,10 +69,12 @@ void TreeDustGrid::setupSelfBefore()
     _random = find<Random>();
     _parallel = find<ParallelFactory>()->parallel(nthreads);
     _dd = find<DustDistribution>();
+    _ds = find<DustSystem>();
     _dmib = _dd->interface<DustMassInBoxInterface>();
     _useDmibForSubdivide = _dmib && !_maxDensDispFraction;
     _totalmass = _dd->mass();
     _eps = 1e-12 * extent().widths().norm();
+    _totalvolume = boundingbox().volume();
 
     // Create the root node
 
@@ -325,6 +328,34 @@ void TreeDustGrid::setMaxDensDispFraction(double value)
 double TreeDustGrid::maxDensDispFraction() const
 {
     return _maxDensDispFraction;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void TreeDustGrid::setMaxTempVolFraction(double value)
+{
+    _maxTempVolFraction = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double TreeDustGrid::maxTempVolFraction() const
+{
+    return _maxTempVolFraction;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void TreeDustGrid::setMaxTempGradVolFraction(double value)
+{
+    _maxTempGradVolFraction = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double TreeDustGrid::maxTempGradVolFraction() const
+{
+    return _maxTempGradVolFraction;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -657,6 +688,164 @@ double TreeDustGrid::density(int h, int m) const
 {
     TreeNode* node = getnode(m);
     return _dmib->massInBox(h, node->extent()) / node->volume();
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, double temp, double tempGrad)
+{
+    // If level is below or at minlevel, there is always subdivision, and the subdivision is "regular"
+    int level = node->level();
+    int cellNr = cellnumber(node);
+
+    if (vol == 0 && tempGrad == 0)
+    {
+        vol = _ds->volume(cellNr);
+        temp = _ds->temperature(cellNr);
+    }
+
+    // if level is below maxlevel, there may be subdivision depending on various stopping criteria
+    if (level < _maxlevel && node->ynchildless())
+    {
+        // default to no subdivision, unless there is a stopping criteria
+        bool needDivision = false;
+
+        // check temperature * volume fraction
+        if (!needDivision && _maxTempVolFraction > 0)
+        {
+            double tempVolfraction = temp*vol/_totalvolume;
+            if (tempVolfraction >= _maxTempVolFraction) needDivision = true;
+        }
+
+        // check tempGrad * volume fraction
+        if (!needDivision && _maxTempGradVolFraction > 0)
+        {
+            // The temperature gradient starts by calculating the average temperature for
+            // each wall (at the neighbor's side). This takes into account the volume of
+            // the neighboring cells (a neighbor which subdivision level is one more than the
+            // current cell gets a weight of 1/4, since there are 4 of those neighbors).
+            // The temperature gradient is then defined as the average (over all 6 walls)
+            // of the absolute difference between the average wall temperature and the
+            // current cell temperature. So:
+            // tempGrad = (SUM_wall abs(T_wall-T_cell)) / 6
+            if (vol == 0 && tempGrad == 0)
+            {
+                // Loop over all 6 walls
+                for (int wallInt = 0; wallInt < 6; wallInt++)
+                {
+                    TreeNode::Wall wall = static_cast<TreeNode::Wall>(wallInt);
+                    // The mean wall temperature is acquired by multiplying the temperature of
+                    // each neighbor with it's weight (1/4^{wall_level-cell_level}), and summing
+                    // over all these weighted neighbor temperatures.
+                    double meanWallT = 0;
+                    vector<TreeNode*> neighbors = node->getneighbors(wall);
+                    for (unsigned int i = 0 ; i < neighbors.size() ; i++)
+                    {
+                        int neighborcellNr = cellnumber(neighbors[i]);
+                        meanWallT += _ds->temperature(neighborcellNr)/pow(4, neighbors[i]->level() - node->level());
+                    }
+                    tempGrad += abs(meanWallT - temp);
+                }
+                tempGrad /= 6; // 6 walls: divide by 6 to average
+            }
+            double tempGradVolFraction = tempGrad * vol / _totalvolume;
+            if (tempGradVolFraction >= _maxTempGradVolFraction) needDivision = true;
+        }
+
+        if (needDivision)
+        {
+            // there is subdivision. Note that this does use regular subdivision
+            // So this needs further attention when using barycentric trees...
+            node->createchildren(_tree.size());
+            _tree.insert(_tree.end(), node->children().begin(), node->children().end());
+            // Recursion
+            vector<TreeNode*> children = node->children();
+            int childSize = children.size(); // 8 for octree, 2 for bintree
+            for (int i = 0 ; i < childSize; i++)
+            {
+                // Volume is extensive, temperature is intensive.
+                // Temperature gradient depends on how the temperature varies, but is
+                // assumed to be intensive here (by definition, since the tempGrad is just a heuristic).
+                subdivideTemperatureRecursive(children[i], vol/childSize, temp, tempGrad);
+            }
+        }
+    }
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void TreeDustGrid::dynamicGrid()
+{
+    Log* log = find<Log>();
+    log->info("Dynamic grid: subdividing the tree dust grid based on radiation criteria...");
+    _ds->calculateTemperature(); // Calculates the temperature in each dust cell (saved in _ds)
+    // Loop over all leaf nodes
+    for (unsigned int i = 0 ; i < _idv.size() ; i++)
+    {
+        TreeNode* node = _tree[_idv[i]];
+        // Do recursive subdivision of the node
+        // Use of recursion is done since a node already calculates its volume, temperature and
+        // temperature gradient, and these are passed to each child (if subdivided).
+        // These can not be calculated from the child itself, since the child is not (yet) part
+        // of the dust grid.
+        subdivideTemperatureRecursive(node);
+    }
+    // -- Pretty much copy paste from setupSelfBefore()... --
+    // Reconstruct _cellnumberv and _idv
+    int m = 0;
+    _cellnumberv.resize(_Nnodes,-1);
+    _idv.clear();
+    for (int l=0; l<_Nnodes; l++)
+    {
+        if (_tree[l]->ynchildless())
+        {
+            _idv.push_back(l);
+            _cellnumberv[l] = m;
+            m++;
+        }
+    }
+    int Ncells = _idv.size();
+
+    // Log the number of cells
+
+    log->info("Reconstruction of the tree finished.");
+    log->info("  Total number of nodes: " + QString::number(_Nnodes));
+    log->info("  Total number of leaves: " + QString::number(Ncells));
+    vector<int> countv(_maxlevel+1);
+    for (int m=0; m<Ncells; m++)
+    {
+        TreeNode* node = _tree[_idv[m]];
+        int level = node->level();
+        countv[level]++;
+    }
+    log->info("  Number of leaf cells of each level:");
+    for (int level=0; level<=_maxlevel; level++)
+        log->info("    Level " + QString::number(level) + ": " + QString::number(countv[level]) + " cells");
+
+    // Determine the number of levels to be included in 3D grid output (if such output is requested)
+
+    if (writeGrid())
+    {
+        int cumulativeCells = 0;
+        for (_highestWriteLevel=0; _highestWriteLevel<=_maxlevel; _highestWriteLevel++)
+        {
+            cumulativeCells += countv[_highestWriteLevel];
+            if (cumulativeCells > 1500) break;          // experimental number
+        }
+        if (_highestWriteLevel<_maxlevel)
+            log->info("Will be outputting 3D grid data up to level " + QString::number(_highestWriteLevel) +
+                      ", i.e. " + QString::number(cumulativeCells) + " cells.");
+    }
+
+    // Add neighbors to the tree structure (but only if required for the search method)
+
+    if (_search == Neighbor)
+    {
+        log->info("Adding neighbors to the tree nodes...");
+        for (int l=0; l<_Nnodes; l++) _tree[l]->deleteallneighbors(); // First start by resetting all neighbor lists
+        for (int l=0; l<_Nnodes; l++) _tree[l]->addneighbors();
+        for (int l=0; l<_Nnodes; l++) _tree[l]->sortneighbors();
+    }
 }
 
 //////////////////////////////////////////////////////////////////////

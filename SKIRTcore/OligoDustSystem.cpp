@@ -236,6 +236,13 @@ void OligoDustSystem::write(QString filenameSuffix) const
 
 //////////////////////////////////////////////////////////////////////
 
+double OligoDustSystem::temperature(int m) const
+{
+    return meanintensityv(m)[0];
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void OligoDustSystem::reinitialiseGrid()
 {
     // setupSelfAfter() does the initialising

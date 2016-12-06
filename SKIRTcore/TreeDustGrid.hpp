@@ -11,6 +11,7 @@
 #include "DustMassInBoxInterface.hpp"
 #include "Random.hpp"
 class DustDistribution;
+class DustSystem;
 class TreeNode;
 class Parallel;
 class ProcessAssigner;
@@ -73,6 +74,18 @@ class TreeDustGrid : public BoxDustGrid, public DustGridDensityInterface
     Q_CLASSINFO("MaxValue", "1")
     Q_CLASSINFO("Default", "0")
 
+    Q_CLASSINFO("Property", "maxTempVolFraction")
+    Q_CLASSINFO("Title", "the maximum temperature, multiplied by volume fraction in each dust cell")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("MaxValue", "1e4")
+    Q_CLASSINFO("Default", "0")
+
+    Q_CLASSINFO("Property", "maxTempGradVolFraction")
+    Q_CLASSINFO("Title", "the maximum temperature gradient, multiplied by volume fraction in each dust cell")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("MaxValue", "1e4")
+    Q_CLASSINFO("Default", "0")
+
     //============= Construction - Setup - Destruction =============
 
 protected:
@@ -122,6 +135,15 @@ private:
         \rho({\bf{r}}_n)\, {\bf{r}}_n}{ \sum_n \rho({\bf{r}}_n) }. \f] The last task is to actually
         create the eight child nodes of the node and add them to the tree. */
     void subdivide(TreeNode* node);
+
+    /** This function subdivides the grid further, based on temperature and radiation criteria.
+        The arguments vol, temp and tempGrad can be specified as the node's volume, temperature
+        and temperature gradient. These are needed when the given node is not yet part of the dust
+        grid (multiple subdivision). If the node is part of the dust grid, they can be left to their
+        default values and will not be taken into account. The subdivision is done recursively,
+        since the volume, temperature and temperature gradient of the child nodes are directly
+        inferred from their parent. */
+    void subdivideTemperatureRecursive(TreeNode* node, double vol=0, double temp=0, double tempGrad=0);
 
     //======== Setters & Getters for Discoverable Attributes =======
 
@@ -187,6 +209,20 @@ public:
         density. */
     Q_INVOKABLE double maxDensDispFraction() const;
 
+    /** Sets the maximum temperature times volume fraction in each dust cell. A value of zero
+        means that this criterion is not used. */
+    Q_INVOKABLE void setMaxTempVolFraction(double value);
+
+    /** Returns the maximum temperature times volume fraction of each dust cell. */
+    Q_INVOKABLE double maxTempVolFraction() const;
+
+    /** Sets the maximum temperature gradient times volume fraction in each dust cell. A value of zero
+        means that this criterion is not used. */
+    Q_INVOKABLE void setMaxTempGradVolFraction(double value);
+
+    /** Returns the maximum temperature gradient times volume fraction of each dust cell. */
+    Q_INVOKABLE double maxTempGradVolFraction() const;
+
     //======================== Other Functions =======================
 
 public:
@@ -251,6 +287,11 @@ public:
         on the DustMassInBoxInterface interface in the dust distribution for this simulation. */
     double density(int h, int m) const;
 
+    /** This function subdivides the grid further, based on temperature and radiation criteria.
+        It can only be executed after enough information is gathered, i.e. after enough photon
+        prePackages have been fired. */
+    void dynamicGrid();
+
 protected:
     /** This function writes the intersection of the dust grid with the xy plane to the specified
         DustGridPlotFile object. */
@@ -302,14 +343,18 @@ private:
     double _maxOpticalDepth;
     double _maxMassFraction;
     double _maxDensDispFraction;
+    double _maxTempVolFraction;
+    double _maxTempGradVolFraction;
     ProcessAssigner* _assigner;
 
     // data members initialized during setup
     Random* _random;
     Parallel* _parallel;
     DustDistribution* _dd;
+    DustSystem* _ds;
     DustMassInBoxInterface* _dmib;
     double _totalmass;
+    double _totalvolume;
     double _eps;
     int _Nnodes;
     std::vector<TreeNode*> _tree;

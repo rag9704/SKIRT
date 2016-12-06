@@ -392,6 +392,16 @@ public:
         corresponding to the \f$h\f$'th dust component, and \f$V_m\f$ the volume of the cell. */
     Array meanintensityv(int m) const;
 
+    /** This function calculates the temperature for every grid cell, and stores it.
+        For an oligochramatic simulation, the "temperature" is defined as the meanIntensity at the
+        first wavelength.*/
+    virtual void calculateTemperature();
+
+    /** This function returns the temperature in cell m, given that it is already calculated
+        by calculateTemperature(). For an oligochramatic simulation, the "temperature" is defined
+        as the meanIntensity at the first wavelength. */
+    virtual double temperature(int m) const = 0;
+
     /** This function reinitialises the grid, used when building a dynamic grid */
     virtual void reinitialiseGrid() = 0;
 
