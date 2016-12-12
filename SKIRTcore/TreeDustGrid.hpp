@@ -65,7 +65,7 @@ class TreeDustGrid : public BoxDustGrid, public DustGridDensityInterface
     Q_CLASSINFO("Property", "maxMassFraction")
     Q_CLASSINFO("Title", "the maximum fraction of dust mass contained in each dust cell")
     Q_CLASSINFO("MinValue", "0")
-    Q_CLASSINFO("MaxValue", "1e-2")
+    Q_CLASSINFO("MaxValue", "1e0")
     Q_CLASSINFO("Default", "1e-6")
 
     Q_CLASSINFO("Property", "maxDensDispFraction")

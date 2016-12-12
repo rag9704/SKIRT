@@ -791,6 +791,7 @@ void TreeDustGrid::dynamicGrid()
         subdivideTemperatureRecursive(node);
     }
     // -- Pretty much copy paste from setupSelfBefore()... --
+    _Nnodes = _tree.size();
     // Reconstruct _cellnumberv and _idv
     int m = 0;
     _cellnumberv.resize(_Nnodes,-1);
