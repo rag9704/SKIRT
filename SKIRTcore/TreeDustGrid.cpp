@@ -61,6 +61,9 @@ void TreeDustGrid::setupSelfBefore()
     if (_maxOpticalDepth < 0.0) throw FATALERROR("The maximum mean optical depth should be positive");
     if (_maxMassFraction < 0.0) throw FATALERROR("The maximum mass fraction should be positive");
     if (_maxDensDispFraction < 0.0) throw FATALERROR("The maximum density dispersion fraction should be positive");
+    if (_maxTempVolFraction < 0.0) throw FATALERROR("The maximum temperature * volume fraction should be positive");
+    if (_maxTempGradVolFraction < 0.0) throw FATALERROR("The maximum temperature graident * volume fraction should "
+                                                        "be positive");
 
     // Cache some often used values
     // A Parallel instance is created with a limited amount of threads (4) for performance reasons
@@ -728,7 +731,7 @@ void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, dou
             // of the absolute difference between the average wall temperature and the
             // current cell temperature. So:
             // tempGrad = (SUM_wall abs(T_wall-T_cell)) / 6
-            if (vol == 0 && tempGrad == 0)
+            if (tempGrad == 0)
             {
                 // Loop over all 6 walls
                 for (int wallInt = 0; wallInt < 6; wallInt++)
