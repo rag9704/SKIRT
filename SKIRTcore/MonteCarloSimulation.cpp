@@ -65,6 +65,10 @@ void MonteCarloSimulation::setupSelfBefore()
         throw FATALERROR("Instrument system was not set");
     if (_prePackages < 0)
         throw FATALERROR("Number of prepackages is negative");
+    if (_dynamicIterations < 0)
+        throw FATALERROR("Number of dynamic iterations is negative");
+    if ((_prePackages != 0) != (_dynamicIterations!=0))
+        throw FATALERROR("All dynamic grid parameters should be either on or off.");
     // dust system is optional; nr of packages has a valid default
     // Cache the total amount of packages
     _totalPackages = _packages;
@@ -218,6 +222,20 @@ void MonteCarloSimulation::setPrePackages(double value)
 double MonteCarloSimulation::prePackages() const
 {
     return _prePackages;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void MonteCarloSimulation::setDynamicIterations(int value)
+{
+    _dynamicIterations = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+int MonteCarloSimulation::dynamicIterations() const
+{
+    return _dynamicIterations;
 }
 
 ////////////////////////////////////////////////////////////////////

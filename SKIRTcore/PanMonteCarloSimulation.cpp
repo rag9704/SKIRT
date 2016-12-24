@@ -94,19 +94,21 @@ PanDustSystem* PanMonteCarloSimulation::dustSystem() const
 void PanMonteCarloSimulation::runSelf()
 {
     // If there are prepackages (used to do a coarse simulation to determine the dynamic grid)
-    if(_prePackages > 0)
+    while(_dynamicIterations > 0)
     {
+        _log->info("Starting prepackage iteration "+QString::number(_dynamicIterations));
         setPackages(_prePackages);
         runstellaremission();
         _pds->sumResults();
-        write("_prepackage"); // Write out current results as prepackage results
+        // write("_prepackage"); // Write out current results as prepackage results
         dynamicGrid();
         // properly resize the array used to communicate between rundustXXX() and the corresponding parallel loop
         _Ncells = _pds ? _pds->Ncells() : 0;
         if (_pds && _pds->dustemission()) _Labsbolv.resize(_Ncells);
-        setPackages(_totalPackages); // Use the cached variable to go back to the normal amount of packages
         find<InstrumentSystem>()->reset(); // Reset the instruments
+        _dynamicIterations--;
     }
+    setPackages(_totalPackages); // Use the cached variable to go back to the normal amount of packages
     runstellaremission();
 
     if (_pds && _pds->dustemission())

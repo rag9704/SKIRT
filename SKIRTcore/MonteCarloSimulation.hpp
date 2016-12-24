@@ -70,6 +70,11 @@ class MonteCarloSimulation : public Simulation
     Q_CLASSINFO("MinValue", "0")
     Q_CLASSINFO("Default", "0")
 
+    Q_CLASSINFO("Property", "dynamicIterations")
+    Q_CLASSINFO("Title", "the amount of times the dynamic grid gets reinitialized")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("Default", "0")
+
     //============= Construction - Setup - Destruction =============
 
 protected:
@@ -188,6 +193,12 @@ public:
 
     /** Returns the amount of prepackages used to determine the dynamic grid */
     Q_INVOKABLE double prePackages() const;
+
+    /** Sets the amount of prepackages used to determine the dynamic grid */
+    Q_INVOKABLE void setDynamicIterations(int value);
+
+    /** Returns the amount of prepackages used to determine the dynamic grid */
+    Q_INVOKABLE int dynamicIterations() const;
 
 
     //======================== Other Functions =======================
@@ -417,6 +428,7 @@ protected:
     StellarSystem* _ss;
     DustSystem* _ds;
     double _prePackages;        // amount of prepackages used to determine the dynamic grid
+    int _dynamicIterations;     // amount of times dynamic grid gets reinitialized (for a better temperature estimate)
 
 protected:
     // *** data members initialized by this class through the setChunkParams() function ***
