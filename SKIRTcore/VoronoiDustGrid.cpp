@@ -403,54 +403,12 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     // Start with a V*T vector
     Array VTv; // Volume * Temperature for every cell (_numParticles is the old grid size)
     VTv.resize(_numParticles);
-
-    // Check if we are dealing with a panchromatic or oligochromatic simulation
-    bool pan = find<WavelengthGrid>()->issampledrange();
-    // Panchromatic: draw from temperature (fill VTv)
-    if(pan)
+    ds->calculateTemperature();
+    for(int m=0; m<_numParticles; m++)
     {
-        ds->sumResults(); // To call switchScheme (else there is an error)
-        for(int m=0; m<_numParticles; m++)
-        {
-            // indicative temperature = average population equilibrium temperature weighed by population mass fraction
-            const Array& Jv = ds->meanintensityv(m);
-            // average over dust components
-            double sumRho_h = 0;
-            double sumRhoT_h = 0;
-            for (int h=0; h<ds->Ncomp(); h++)
-            {
-                double rho_h = ds->density(m,h);
-                if (rho_h>0.0)
-                {
-                    // average over dust populations within component
-                    double sumMu_c = 0;
-                    double sumMuT_c = 0;
-                    for (int c=0; c<ds->mix(h)->Npop(); c++)
-                    {
-                        double mu_c = ds->mix(h)->mu(c);
-                        double T_c = ds->mix(h)->equilibrium(Jv,c);
-                        sumMu_c += mu_c;
-                        sumMuT_c += mu_c * T_c;
-                    }
-                    double T_h = sumMuT_c / sumMu_c;
+        VTv[m] = ds->temperature(m)*ds->volume(m);
+    }
 
-                    sumRho_h += rho_h;
-                    sumRhoT_h += rho_h * T_h;
-                }
-            }
-            double T = sumRhoT_h / sumRho_h;
-            VTv[m] = _mesh->volume(m) * T; // V*T vector: volume * temperature
-        }
-    }
-    else // Oligochromatic: use mean intensity instead, for the first wavelength
-    {
-        ds->meanintensityv(0);
-        for(int m=0; m<_numParticles; m++)
-        {
-            const Array& Jv = ds->meanintensityv(m);
-            VTv[m] = _mesh->volume(m) * Jv[0]; // V*T vector: volume * mean intensity (first wavelength)
-        }
-    }
     // Now for the (normalized) cdf
     Array VTcumv; // Initialize cdf (which will be of length _numParticles+1
     NR::cdf(VTcumv, VTv);
@@ -468,12 +426,11 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
             int nrNeighbors = neighborID.size();
             for (int mn=0; mn<nrNeighbors; mn++)
             {
-                totalgrad += abs((VTv[mn]/_mesh->volume(mn)) - (VTv[m]/_mesh->volume(m))); // temperature difference
+                totalgrad += abs(ds->temperature(mn) - ds->temperature(m)); // temperature difference
             }
             VgradTv[m] = totalgrad/nrNeighbors; // Mean gradient
         }
     }
-
     // normalized cdf
     Array VgradTcumv; // Initialize cdf (which will be of length _numParticles+1
     NR::cdf(VgradTcumv, VgradTv);
@@ -539,7 +496,6 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
         values[3] = nrSampledPoints[m]/_mesh->volume(m);
         plotPrePoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z(), values); // Write xyz and T, V and nrsampledpoints
     }
-
     // With the new particle positions, generate a new voronoi mesh
     log->info("Computing Voronoi tesselation for " + QString::number(dustNumParticles)
                   + " random particles from a dust distribution, "

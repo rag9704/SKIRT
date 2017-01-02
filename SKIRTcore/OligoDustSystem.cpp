@@ -236,9 +236,20 @@ void OligoDustSystem::write(QString filenameSuffix) const
 
 //////////////////////////////////////////////////////////////////////
 
+void OligoDustSystem::calculateTemperature()
+{
+    _maxIntensity = 0;
+    for (int m=0; m<_Ncells; m++)
+    {
+        _maxIntensity = std::max(meanintensityv(m)[0], _maxIntensity);
+    }
+}
+
+//////////////////////////////////////////////////////////////////////
+
 double OligoDustSystem::temperature(int m) const
 {
-    return meanintensityv(m)[0];
+    return 100.0*meanintensityv(m)[0]/_maxIntensity;
 }
 
 //////////////////////////////////////////////////////////////////////

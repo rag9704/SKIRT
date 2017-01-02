@@ -3,6 +3,7 @@
 ////       © Astronomical Observatory, Ghent University         ////
 ///////////////////////////////////////////////////////////////// */
 
+#include "Log.hpp"
 #include "OligoDustSystem.hpp"
 #include "OligoMonteCarloSimulation.hpp"
 #include "OligoWavelengthGrid.hpp"
@@ -70,14 +71,16 @@ OligoDustSystem* OligoMonteCarloSimulation::dustSystem() const
 void OligoMonteCarloSimulation::runSelf()
 {
     // If there are prepackages (used to do a coarse simulation to determine the dynamic grid)
-    if(_prePackages > 0)
+    while(_dynamicIterations > 0)
     {
+        _log->info("Starting prepackage iteration "+QString::number(_dynamicIterations));
         setPackages(_prePackages);
         runstellaremission();
         dynamicGrid();
-        setPackages(_totalPackages); // Use the cached variable to go back to the normal amount of packages
         find<InstrumentSystem>()->reset(); // Reset the instruments
+        _dynamicIterations--;
     }
+    setPackages(_totalPackages); // Use the cached variable to go back to the normal amount of packages
     runstellaremission();
 
     write();

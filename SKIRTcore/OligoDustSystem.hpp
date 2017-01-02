@@ -19,7 +19,7 @@ class OligoDustSystem : public DustSystem
 
     Q_CLASSINFO("Property", "writeMeanIntensity")
     Q_CLASSINFO("Title", "output FITS files displaying the mean intensity of the radiation field")
-    Q_CLASSINFO("Default", "no")
+    Q_CLASSINFO("Default", "yes")
 
     //============= Construction - Setup - Destruction =============
 
@@ -81,6 +81,12 @@ public:
         where a map is created for each wavelength in the global wavelength grid. */
     void write(QString filenameSuffix = "") const;
 
+    /** This function calculates the temperature for every grid cell, and stores it.
+        For an oligochramatic simulation, the "temperature" is defined as the meanIntensity at the
+        first wavelength, multiplied by a factor so the maximum meanIntensity (across all cells) is
+        100. */
+    virtual void calculateTemperature();
+
     /** This function returns the temperature in cell m, given that it is already calculated
         by calculateTemperature(). For an oligochramatic simulation, the "temperature" is defined
         as the meanIntensity at the first wavelength. */
@@ -99,6 +105,7 @@ private:
     int _Nlambda;
     Table<2> _Labsvv;   // absorbed emission for each cell and each wavelength (indexed on m,ell)
 
+    double _maxIntensity; // The maximum mean intensity across all cells
 };
 
 //////////////////////////////////////////////////////////////////////

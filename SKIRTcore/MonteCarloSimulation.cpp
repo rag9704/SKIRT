@@ -606,7 +606,7 @@ void MonteCarloSimulation::dynamicGrid()
     }
     else
     {
-        throw FATALERROR("Use a voronoi grid when using a dynamic grid!");
+        throw FATALERROR("Use a voronoi grid or tree dust grid when using a dynamic grid!");
     }
 }
 

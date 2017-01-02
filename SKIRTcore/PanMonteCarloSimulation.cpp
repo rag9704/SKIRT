@@ -3,6 +3,8 @@
 ////       © Astronomical Observatory, Ghent University         ////
 ///////////////////////////////////////////////////////////////// */
 
+#include "FatalError.hpp"
+#include "InstrumentSystem.hpp"
 #include "Log.hpp"
 #include "NR.hpp"
 #include "PanDustSystem.hpp"
@@ -17,8 +19,6 @@
 #include "StellarSystem.hpp"
 #include "TimeLogger.hpp"
 #include "Units.hpp"
-#include "FatalError.hpp"
-#include "InstrumentSystem.hpp"
 
 using namespace std;
 

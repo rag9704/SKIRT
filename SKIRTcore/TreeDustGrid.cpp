@@ -701,27 +701,11 @@ void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, dou
     int level = node->level();
     int cellNr = cellnumber(node);
 
-    if (vol == 0 && tempGrad == 0)
+    if (vol == 0)
     {
         vol = _ds->volume(cellNr);
         temp = _ds->temperature(cellNr);
-    }
-
-    // if level is below maxlevel, there may be subdivision depending on various stopping criteria
-    if (level < _maxlevel && node->ynchildless())
-    {
-        // default to no subdivision, unless there is a stopping criteria
-        bool needDivision = false;
-
-        // check temperature * volume fraction
-        if (!needDivision && _maxTempVolFraction > 0)
-        {
-            double tempVolfraction = temp*vol/_totalvolume;
-            if (tempVolfraction >= _maxTempVolFraction) needDivision = true;
-        }
-
-        // check tempGrad * volume fraction
-        if (!needDivision && _maxTempGradVolFraction > 0)
+        if (_maxTempGradVolFraction > 0)
         {
             // The temperature gradient starts by calculating the average temperature for
             // each wall (at the neighbor's side). This takes into account the volume of
@@ -751,6 +735,25 @@ void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, dou
                 }
                 tempGrad /= 6; // 6 walls: divide by 6 to average
             }
+        }
+    }
+
+    // if level is below maxlevel, there may be subdivision depending on various stopping criteria
+    if (level < _maxlevel && node->ynchildless())
+    {
+        // default to no subdivision, unless there is a stopping criteria
+        bool needDivision = false;
+
+        // check temperature * volume fraction
+        if (!needDivision && _maxTempVolFraction > 0)
+        {
+            double tempVolfraction = temp*vol/_totalvolume;
+            if (tempVolfraction >= _maxTempVolFraction) needDivision = true;
+        }
+
+        // check tempGrad * volume fraction
+        if (!needDivision && _maxTempGradVolFraction > 0)
+        {
             double tempGradVolFraction = tempGrad * vol / _totalvolume;
             if (tempGradVolFraction >= _maxTempGradVolFraction) needDivision = true;
         }
