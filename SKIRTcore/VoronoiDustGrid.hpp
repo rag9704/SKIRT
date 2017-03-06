@@ -53,7 +53,7 @@ class VoronoiDustGrid : public BoxDustGrid
     Q_CLASSINFO("Title", "the percentage of grid particles used for the original grid (when using dynamic grids)")
     Q_CLASSINFO("MinValue", "0.0001")
     Q_CLASSINFO("MaxValue", "1")
-    Q_CLASSINFO("Default", "0.2")
+    Q_CLASSINFO("Default", "0.8")
 
     Q_CLASSINFO("Property", "tempDistFraction")
     Q_CLASSINFO("Title", "the percentage of grid particles drawn from a temperature distribution")

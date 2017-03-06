@@ -729,7 +729,8 @@ void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, dou
                     for (unsigned int i = 0 ; i < neighbors.size() ; i++)
                     {
                         int neighborcellNr = cellnumber(neighbors[i]);
-                        meanWallT += _ds->temperature(neighborcellNr)/pow(4, neighbors[i]->level() - node->level());
+                        meanWallT += _ds->temperature(neighborcellNr)/pow(4,
+                                                      max(neighbors[i]->level() - node->level(), 0));
                     }
                     tempGrad += abs(meanWallT - temp);
                 }
