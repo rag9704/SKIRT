@@ -67,6 +67,18 @@ class VoronoiDustGrid : public BoxDustGrid
     Q_CLASSINFO("MaxValue", "1")
     Q_CLASSINFO("Default", "0")
 
+    Q_CLASSINFO("Property", "tempDensityFraction")
+    Q_CLASSINFO("Title", "the percentage of grid particles drawn from a temperature times density distribution")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("MaxValue", "1")
+    Q_CLASSINFO("Default", "0")
+
+    Q_CLASSINFO("Property", "densityImportance")
+    Q_CLASSINFO("Title", "the importance of density when using tempDensityFraction")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("MaxValue", "100")
+    Q_CLASSINFO("Default", "1")
+
     Q_CLASSINFO("Property", "voronoiMeshFile")
     Q_CLASSINFO("Title", "the Voronoi mesh data file")
     Q_CLASSINFO("Optional", "true")
@@ -138,11 +150,23 @@ public:
     /** Returns the fraction of grid particles drawn from a temperature distribution */
     Q_INVOKABLE double tempDistFraction() const;
 
-    /** Sets the fraction of grid particles drawn from a temperature distribution */
+    /** Sets the fraction of grid particles drawn from a temperature gradient distribution */
     Q_INVOKABLE void setTempGradFraction(double value);
 
-    /** Returns the fraction of grid particles drawn from a temperature distribution */
+    /** Returns the fraction of grid particles drawn from a temperature gradient distribution */
     Q_INVOKABLE double tempGradFraction() const;
+
+    /** Sets the fraction of grid particles drawn from a temperature times density distribution */
+    Q_INVOKABLE void setTempDensityFraction(double value);
+
+    /** Returns the fraction of grid particles drawn from a temperature times density distribution */
+    Q_INVOKABLE double tempDensityFraction() const;
+
+    /** Sets the importance of density when using a temperature times density distribution */
+    Q_INVOKABLE void setDensityImportance(double value);
+
+    /** Returns the importance of density when using a temperature times density distribution */
+    Q_INVOKABLE double densityImportance() const;
 
     /** Sets the file containing the Voronoi particle locations in case \em distribution has the
         value \em File. */
@@ -191,6 +215,8 @@ private:
     double _preGridPointFraction;
     double _tempDistFraction;
     double _tempGradFraction;
+    double _tempDensityFraction;
+    double _densityImportance;
     VoronoiMeshFile* _meshfile;
 
     // data members initialized during setup

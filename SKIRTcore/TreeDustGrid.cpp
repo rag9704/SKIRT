@@ -62,8 +62,9 @@ void TreeDustGrid::setupSelfBefore()
     if (_maxMassFraction < 0.0) throw FATALERROR("The maximum mass fraction should be positive");
     if (_maxDensDispFraction < 0.0) throw FATALERROR("The maximum density dispersion fraction should be positive");
     if (_maxTempVolFraction < 0.0) throw FATALERROR("The maximum temperature * volume fraction should be positive");
-    if (_maxTempGradVolFraction < 0.0) throw FATALERROR("The maximum temperature graident * volume fraction should "
+    if (_maxTempGradVolFraction < 0.0) throw FATALERROR("The maximum temperature gradient * volume fraction should "
                                                         "be positive");
+    if (_maxTempMassFraction < 0.0) throw FATALERROR("The maximum temperature * mass fraction should be positive");
 
     // Cache some often used values
     // A Parallel instance is created with a limited amount of threads (4) for performance reasons
@@ -78,6 +79,7 @@ void TreeDustGrid::setupSelfBefore()
     _totalmass = _dd->mass();
     _eps = 1e-12 * extent().widths().norm();
     _totalvolume = boundingbox().volume();
+    _tempMassNormalization = pow(_totalmass, _massImportance)*pow(_totalvolume, 1.-_massImportance);
 
     // Create the root node
 
@@ -359,6 +361,34 @@ void TreeDustGrid::setMaxTempGradVolFraction(double value)
 double TreeDustGrid::maxTempGradVolFraction() const
 {
     return _maxTempGradVolFraction;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void TreeDustGrid::setMaxTempMassFraction(double value)
+{
+    _maxTempMassFraction = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double TreeDustGrid::maxTempMassFraction() const
+{
+    return _maxTempMassFraction;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void TreeDustGrid::setMassImportance(double value)
+{
+    _massImportance = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double TreeDustGrid::massImportance() const
+{
+    return _massImportance;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -695,7 +725,8 @@ double TreeDustGrid::density(int h, int m) const
 
 //////////////////////////////////////////////////////////////////////
 
-void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, double temp, double tempGrad)
+void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, double temp, double tempGrad,
+                                                 double density)
 {
     // If level is below or at minlevel, there is always subdivision, and the subdivision is "regular"
     int level = node->level();
@@ -705,6 +736,8 @@ void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, dou
     {
         vol = _ds->volume(cellNr);
         temp = _ds->temperature(cellNr);
+        // Density is taken to the power _massImportance, which functions as a weight.
+        density = pow(_ds->density(cellNr), _massImportance);
         if (_maxTempGradVolFraction > 0)
         {
             // The temperature gradient starts by calculating the average temperature for
@@ -744,19 +777,23 @@ void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, dou
     {
         // default to no subdivision, unless there is a stopping criteria
         bool needDivision = false;
-
         // check temperature * volume fraction
         if (!needDivision && _maxTempVolFraction > 0)
         {
             double tempVolfraction = temp*vol/_totalvolume;
             if (tempVolfraction >= _maxTempVolFraction) needDivision = true;
         }
-
         // check tempGrad * volume fraction
         if (!needDivision && _maxTempGradVolFraction > 0)
         {
             double tempGradVolFraction = tempGrad * vol / _totalvolume;
             if (tempGradVolFraction >= _maxTempGradVolFraction) needDivision = true;
+        }
+        // check temperature * mass fraction
+        if (!needDivision && _maxTempMassFraction > 0)
+        {
+            double tempMassfraction = temp*vol*density/_tempMassNormalization;
+            if (tempMassfraction >= _maxTempMassFraction) needDivision = true;
         }
 
         if (needDivision)
@@ -773,7 +810,7 @@ void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, dou
                 // Volume is extensive, temperature is intensive.
                 // Temperature gradient depends on how the temperature varies, but is
                 // assumed to be intensive here (by definition, since the tempGrad is just a heuristic).
-                subdivideTemperatureRecursive(children[i], vol/childSize, temp, tempGrad);
+                subdivideTemperatureRecursive(children[i], vol/childSize, temp, tempGrad, density);
             }
         }
     }

@@ -86,6 +86,18 @@ class TreeDustGrid : public BoxDustGrid, public DustGridDensityInterface
     Q_CLASSINFO("MaxValue", "1e4")
     Q_CLASSINFO("Default", "0")
 
+    Q_CLASSINFO("Property", "maxTempMassFraction")
+    Q_CLASSINFO("Title", "the maximum temperature, multiplied by mass fraction in each dust cell")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("MaxValue", "1e4")
+    Q_CLASSINFO("Default", "0")
+
+    Q_CLASSINFO("Property", "massImportance")
+    Q_CLASSINFO("Title", "when using maxTempMassFraction, how much weight does the mass get?")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("MaxValue", "100")
+    Q_CLASSINFO("Default", "1")
+
     //============= Construction - Setup - Destruction =============
 
 protected:
@@ -137,13 +149,14 @@ private:
     void subdivide(TreeNode* node);
 
     /** This function subdivides the grid further, based on temperature and radiation criteria.
-        The arguments vol, temp and tempGrad can be specified as the node's volume, temperature
-        and temperature gradient. These are needed when the given node is not yet part of the dust
+        The arguments vol, temp, tempGrad and density can be specified as the node's volume, temperature,
+        temperature gradient and density. These are needed when the given node is not yet part of the dust
         grid (multiple subdivision). If the node is part of the dust grid, they can be left to their
-        default values and will not be taken into account. The subdivision is done recursively,
-        since the volume, temperature and temperature gradient of the child nodes are directly
+        default values, which means they get calculated in the function. The subdivision is done recursively,
+        since the volume, temperature, temperature gradient and density of the child nodes are directly
         inferred from their parent. */
-    void subdivideTemperatureRecursive(TreeNode* node, double vol=0, double temp=0, double tempGrad=0);
+    void subdivideTemperatureRecursive(TreeNode* node, double vol=0, double temp=0, double tempGrad=0,
+                                       double density=0);
 
     //======== Setters & Getters for Discoverable Attributes =======
 
@@ -222,6 +235,21 @@ public:
 
     /** Returns the maximum temperature gradient times volume fraction of each dust cell. */
     Q_INVOKABLE double maxTempGradVolFraction() const;
+
+    /** Sets the maximum temperature times mass fraction in each dust cell. A value of zero
+        means that this criterion is not used. */
+    Q_INVOKABLE void setMaxTempMassFraction(double value);
+
+    /** Returns the maximum temperature times mass fraction of each dust cell. */
+    Q_INVOKABLE double maxTempMassFraction() const;
+
+    /** Sets the importance of the mass when using maxTempMassFraction. A value of one means
+        that they are equally important, a value of zero means that only temperature will be used,
+        and a value higher than one gives more importance to the mass. */
+    Q_INVOKABLE void setMassImportance(double value);
+
+    /** Returns the importance of mass when using maxTempMassFraction. */
+    Q_INVOKABLE double massImportance() const;
 
     //======================== Other Functions =======================
 
@@ -345,6 +373,8 @@ private:
     double _maxDensDispFraction;
     double _maxTempVolFraction;
     double _maxTempGradVolFraction;
+    double _maxTempMassFraction;
+    double _massImportance;
     ProcessAssigner* _assigner;
 
     // data members initialized during setup
@@ -355,6 +385,7 @@ private:
     DustMassInBoxInterface* _dmib;
     double _totalmass;
     double _totalvolume;
+    double _tempMassNormalization;
     double _eps;
     int _Nnodes;
     std::vector<TreeNode*> _tree;
