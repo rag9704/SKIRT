@@ -92,6 +92,12 @@ class TreeDustGrid : public BoxDustGrid, public DustGridDensityInterface
     Q_CLASSINFO("MaxValue", "1e4")
     Q_CLASSINFO("Default", "0")
 
+    Q_CLASSINFO("Property", "tempImportance")
+    Q_CLASSINFO("Title", "when using maxTempMassFraction, how much weight does the temperature get?")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("MaxValue", "100")
+    Q_CLASSINFO("Default", "1")
+
     Q_CLASSINFO("Property", "massImportance")
     Q_CLASSINFO("Title", "when using maxTempMassFraction, how much weight does the mass get?")
     Q_CLASSINFO("MinValue", "0")
@@ -243,6 +249,14 @@ public:
     /** Returns the maximum temperature times mass fraction of each dust cell. */
     Q_INVOKABLE double maxTempMassFraction() const;
 
+    /** Sets the importance of the temperature when using maxTempMassFraction. A value of one means
+        that they are equally important, a value of zero means that only mass will be used,
+        and a value higher than one gives more importance to the temperature. */
+    Q_INVOKABLE void setTempImportance(double value);
+
+    /** Returns the importance of temperature when using maxTempMassFraction. */
+    Q_INVOKABLE double tempImportance() const;
+
     /** Sets the importance of the mass when using maxTempMassFraction. A value of one means
         that they are equally important, a value of zero means that only temperature will be used,
         and a value higher than one gives more importance to the mass. */
@@ -374,6 +388,7 @@ private:
     double _maxTempVolFraction;
     double _maxTempGradVolFraction;
     double _maxTempMassFraction;
+    double _tempImportance;
     double _massImportance;
     ProcessAssigner* _assigner;
 

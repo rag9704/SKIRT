@@ -53,7 +53,7 @@ void VoronoiDustGrid::setupSelfBefore()
 
     // Prepackage phase (for setting up the dynamic grid)
     _totalNumParticles = _numParticles;
-    if(_tempDistFraction+_tempGradFraction+_tempDensityFraction > 0)
+    if(_tempDistFraction+_tempGradFraction+_tempMassFraction > 0)
     {
         // Use a fraction of the total particles for the prepackage phase
         _numParticles = ceil(_preGridPointFraction*_totalNumParticles);
@@ -333,30 +333,44 @@ double VoronoiDustGrid::tempGradFraction() const
 
 //////////////////////////////////////////////////////////////////////
 
-void VoronoiDustGrid::setTempDensityFraction(double value)
+void VoronoiDustGrid::setTempMassFraction(double value)
 {
-    _tempDensityFraction = value;
+    _tempMassFraction = value;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-double VoronoiDustGrid::tempDensityFraction() const
+double VoronoiDustGrid::tempMassFraction() const
 {
-    return _tempDensityFraction;
+    return _tempMassFraction;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void VoronoiDustGrid::setDensityImportance(double value)
+void VoronoiDustGrid::setTempImportance(double value)
 {
-    _densityImportance = value;
+    _tempImportance = value;
 }
 
 //////////////////////////////////////////////////////////////////////
 
-double VoronoiDustGrid::densityImportance() const
+double VoronoiDustGrid::tempImportance() const
 {
-    return _densityImportance;
+    return _tempImportance;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+void VoronoiDustGrid::setMassImportance(double value)
+{
+    _massImportance = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double VoronoiDustGrid::massImportance() const
+{
+    return _massImportance;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -422,7 +436,7 @@ void VoronoiDustGrid::path(DustGridPath* path) const
 void VoronoiDustGrid::drawFromTemperatureDistribution()
 {
     // If we don't draw from a dynamic distribution, return
-    if(_tempDistFraction+_tempGradFraction+_tempDensityFraction == 0)
+    if(_tempDistFraction+_tempGradFraction+_tempMassFraction == 0)
         return;
     Log* log = find<Log>();
     log->info("Drawing extra voronoi points from a dynamic distribution.");
@@ -459,12 +473,12 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     // Temperature times density (use mass instead of density to draw more from large cells)
     Array TMv; // temperature * mass vector
     TMv.resize(_numParticles);
-    if (_tempDensityFraction > 0)
+    if (_tempMassFraction > 0)
     {
         // Loop over all particles
         for (int m=0; m<_numParticles; m++)
         {
-            TMv[m] = ds->temperature(m)*pow(ds->density(m), _densityImportance)*ds->volume(m);
+            TMv[m] = pow(ds->temperature(m), _tempImportance)*pow(ds->density(m), _massImportance)*ds->volume(m);
         }
     }
 
@@ -488,7 +502,7 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     vector<Vec> rv(_numParticles); // Position vector for all the new grid points
 
     // Sample grid points according to the original distribution (usually dust distribution)
-    int dustNumParticles = floor(_numParticles*(1-_tempDistFraction-_tempGradFraction-_tempDensityFraction));
+    int dustNumParticles = floor(_numParticles*(1-_tempDistFraction-_tempGradFraction-_tempMassFraction));
     if (dustNumParticles > 0)
     {
         if (_distribution != DustDensity)
@@ -557,7 +571,8 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
                   + " particles distributed according to a temperature gradient distribution, and "
                   + QString::number(_numParticles-dustNumParticles-tempDistNumParticles-tempGradNumParticles)
                   + " particles distributed according to a temperature times density distribution, "
-                  +  "with density importance " + QString::number(_densityImportance) + ".");
+                  + "with temperature importance " + QString::number(_tempImportance)
+                  +  "and mass importance " + QString::number(_massImportance) + ".");
     delete _mesh; // Delete old mesh
     _mesh = new VoronoiMesh(rv, extent(), log, _relaxationSteps);
 }

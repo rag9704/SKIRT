@@ -67,14 +67,20 @@ class VoronoiDustGrid : public BoxDustGrid
     Q_CLASSINFO("MaxValue", "1")
     Q_CLASSINFO("Default", "0")
 
-    Q_CLASSINFO("Property", "tempDensityFraction")
+    Q_CLASSINFO("Property", "tempMassFraction")
     Q_CLASSINFO("Title", "the percentage of grid particles drawn from a temperature times density distribution")
     Q_CLASSINFO("MinValue", "0")
     Q_CLASSINFO("MaxValue", "1")
     Q_CLASSINFO("Default", "0")
 
-    Q_CLASSINFO("Property", "densityImportance")
-    Q_CLASSINFO("Title", "the importance of density when using tempDensityFraction")
+    Q_CLASSINFO("Property", "tempImportance")
+    Q_CLASSINFO("Title", "the importance of temperature when using tempMassFraction")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("MaxValue", "100")
+    Q_CLASSINFO("Default", "1")
+
+    Q_CLASSINFO("Property", "massImportance")
+    Q_CLASSINFO("Title", "the importance of density when using tempMassFraction")
     Q_CLASSINFO("MinValue", "0")
     Q_CLASSINFO("MaxValue", "100")
     Q_CLASSINFO("Default", "1")
@@ -157,16 +163,22 @@ public:
     Q_INVOKABLE double tempGradFraction() const;
 
     /** Sets the fraction of grid particles drawn from a temperature times density distribution */
-    Q_INVOKABLE void setTempDensityFraction(double value);
+    Q_INVOKABLE void setTempMassFraction(double value);
 
     /** Returns the fraction of grid particles drawn from a temperature times density distribution */
-    Q_INVOKABLE double tempDensityFraction() const;
+    Q_INVOKABLE double tempMassFraction() const;
+
+    /** Sets the importance of temperature when using a temperature times density distribution */
+    Q_INVOKABLE void setTempImportance(double value);
+
+    /** Returns the importance of temperature when using a temperature times density distribution */
+    Q_INVOKABLE double tempImportance() const;
 
     /** Sets the importance of density when using a temperature times density distribution */
-    Q_INVOKABLE void setDensityImportance(double value);
+    Q_INVOKABLE void setMassImportance(double value);
 
     /** Returns the importance of density when using a temperature times density distribution */
-    Q_INVOKABLE double densityImportance() const;
+    Q_INVOKABLE double massImportance() const;
 
     /** Sets the file containing the Voronoi particle locations in case \em distribution has the
         value \em File. */
@@ -215,8 +227,9 @@ private:
     double _preGridPointFraction;
     double _tempDistFraction;
     double _tempGradFraction;
-    double _tempDensityFraction;
-    double _densityImportance;
+    double _tempMassFraction;
+    double _tempImportance;
+    double _massImportance;
     VoronoiMeshFile* _meshfile;
 
     // data members initialized during setup

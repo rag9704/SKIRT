@@ -379,6 +379,20 @@ double TreeDustGrid::maxTempMassFraction() const
 
 //////////////////////////////////////////////////////////////////////
 
+void TreeDustGrid::setTempImportance(double value)
+{
+    _tempImportance = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double TreeDustGrid::tempImportance() const
+{
+    return _tempImportance;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void TreeDustGrid::setMassImportance(double value)
 {
     _massImportance = value;
@@ -737,7 +751,7 @@ void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, dou
         vol = _ds->volume(cellNr);
         temp = _ds->temperature(cellNr);
         // Density is taken to the power _massImportance, which functions as a weight.
-        density = pow(_ds->density(cellNr), _massImportance);
+        density = _ds->density(cellNr);
         if (_maxTempGradVolFraction > 0)
         {
             // The temperature gradient starts by calculating the average temperature for
@@ -763,7 +777,7 @@ void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, dou
                     {
                         int neighborcellNr = cellnumber(neighbors[i]);
                         meanWallT += _ds->temperature(neighborcellNr)/pow(4,
-                                                      max(neighbors[i]->level() - node->level(), 0));
+                                                      min(neighbors[i]->level() - node->level(), 0));
                     }
                     tempGrad += abs(meanWallT - temp);
                 }
@@ -792,7 +806,8 @@ void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, dou
         // check temperature * mass fraction
         if (!needDivision && _maxTempMassFraction > 0)
         {
-            double tempMassfraction = temp*vol*density/_tempMassNormalization;
+            double tempMassfraction = pow(temp, _tempImportance)*vol*pow(density, _massImportance) /
+                                            _tempMassNormalization;
             if (tempMassfraction >= _maxTempMassFraction) needDivision = true;
         }
 
