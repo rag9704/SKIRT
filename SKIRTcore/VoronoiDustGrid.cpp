@@ -572,7 +572,7 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
                   + QString::number(_numParticles-dustNumParticles-tempDistNumParticles-tempGradNumParticles)
                   + " particles distributed according to a temperature times density distribution, "
                   + "with temperature importance " + QString::number(_tempImportance)
-                  +  "and mass importance " + QString::number(_massImportance) + ".");
+                  +  " and mass importance " + QString::number(_massImportance) + ".");
     delete _mesh; // Delete old mesh
     _mesh = new VoronoiMesh(rv, extent(), log, _relaxationSteps);
 }

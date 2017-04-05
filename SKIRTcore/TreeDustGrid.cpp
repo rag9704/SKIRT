@@ -79,7 +79,7 @@ void TreeDustGrid::setupSelfBefore()
     _totalmass = _dd->mass();
     _eps = 1e-12 * extent().widths().norm();
     _totalvolume = boundingbox().volume();
-    _tempMassNormalization = pow(_totalmass, _massImportance)*pow(_totalvolume, 1.-_massImportance);
+    _tempMassNormalization = 0; // The normalization will be calculated the first time it is needed
 
     // Create the root node
 
@@ -838,6 +838,15 @@ void TreeDustGrid::dynamicGrid()
     Log* log = find<Log>();
     log->info("Dynamic grid: subdividing the tree dust grid based on radiation criteria...");
     _ds->calculateTemperature(); // Calculates the temperature in each dust cell (saved in _ds)
+    // Calculate temperature*mass normalization by summing the tempmass criterion for every cell
+    if (_tempMassNormalization == 0)
+    {
+        for (unsigned int i = 0 ; i < _idv.size() ; i++)
+        {
+            _tempMassNormalization += pow(_ds->temperature(i), _tempImportance) * _ds->volume(i) *
+                                        pow(_ds->density(i), _massImportance);
+        }
+    }
     // Loop over all leaf nodes
     for (unsigned int i = 0 ; i < _idv.size() ; i++)
     {
