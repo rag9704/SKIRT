@@ -505,8 +505,7 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
     int dustNumParticles = floor(_numParticles*(1-_tempDistFraction-_tempGradFraction-_tempMassFraction));
     if (dustNumParticles > 0)
     {
-        if (_distribution != DustDensity)
-            throw FATALERROR("Dynamic grid currently only supports Dust Density distributions!");
+        // Assume that we sample along the dust density, even though initial drawing can be different
         DustDistribution* dd = find<DustDistribution>();
         for (int m=0; m<dustNumParticles; m++)
         {
@@ -560,7 +559,8 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
         values[1] = _mesh->volume(m);
         values[2] = nrSampledPoints[m];
         values[3] = nrSampledPoints[m]/_mesh->volume(m);
-        plotPrePoints.writePoint(rv[m].x(), rv[m].y(), rv[m].z(), values); // Write xyz and T, V and nrsampledpoints
+        Position pos = _mesh->particlePosition(m);
+        plotPrePoints.writePoint(pos.x(), pos.y(), pos.z(), values); // Write xyz and T, V and nrsampledpoints
     }
     // With the new particle positions, generate a new voronoi mesh
     log->info("Computing Voronoi tesselation for " + QString::number(dustNumParticles)

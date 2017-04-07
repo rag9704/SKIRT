@@ -821,7 +821,10 @@ void PanDustSystem::calculateTemperature()
                 sumRhoT_h += rho_h * T_h;
             }
         }
-        _cellTempv[m] = sumRhoT_h / sumRho_h;
+        if (sumRho_h>0.0)
+        {
+            _cellTempv[m] = sumRhoT_h / sumRho_h;
+        }  // else: no dust, so temperature is 0
     }
     _calculatedTemp = true;
 }
