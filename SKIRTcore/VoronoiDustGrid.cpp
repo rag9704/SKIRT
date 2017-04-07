@@ -436,8 +436,9 @@ void VoronoiDustGrid::path(DustGridPath* path) const
 void VoronoiDustGrid::drawFromTemperatureDistribution()
 {
     // If we don't draw from a dynamic distribution, return
-    if(_tempDistFraction+_tempGradFraction+_tempMassFraction == 0)
-        return;
+    // Commented out so that if we use prepackages, we still draw from a dust distribution (and not Uniform)
+    //if(_tempDistFraction+_tempGradFraction+_tempMassFraction == 0)
+    //    return;
     Log* log = find<Log>();
     log->info("Drawing extra voronoi points from a dynamic distribution.");
     DustSystem* ds = find<DustSystem>(); // Cache the dust system
