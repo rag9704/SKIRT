@@ -755,7 +755,7 @@ void TreeDustGrid::subdivideTemperatureRecursive(TreeNode* node, double vol, dou
         if (_maxTempGradVolFraction > 0)
         {
             // The temperature gradient starts by calculating the average temperature for
-            // each wall (at the neighbor's side). This takes into account the volume of
+            // each wall (at the neighbor's side). This takes into account the surface area of
             // the neighboring cells (a neighbor which subdivision level is one more than the
             // current cell gets a weight of 1/4, since there are 4 of those neighbors).
             // The temperature gradient is then defined as the average (over all 6 walls)

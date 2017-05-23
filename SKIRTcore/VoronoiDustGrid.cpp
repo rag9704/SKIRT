@@ -464,11 +464,17 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
             double totalgrad = 0; // The sum of all individual gradients
             vector<int> neighborID = _mesh->getNeighbors(m);
             int nrNeighbors = neighborID.size();
-            for (int mn=0; mn<nrNeighbors; mn++)
+            Position cellpos = _mesh->particlePosition(m);
+            for (int mni=0; mni<nrNeighbors; mni++)
             {
-                totalgrad += abs(ds->temperature(mn) - ds->temperature(m)); // temperature difference
+                int mn = neighborID[mni];
+                if (mn >= 0) {
+                    // gradient with neighbor
+                    totalgrad += abs(ds->temperature(mn) - ds->temperature(m)) /
+                                 (_mesh->particlePosition(mn) - cellpos).norm();
+                }
             }
-            VgradTv[m] = totalgrad/nrNeighbors; // Mean gradient
+            VgradTv[m] = ds->volume(m)*totalgrad/nrNeighbors; // Mean gradient
         }
     }
     // Temperature times density (use mass instead of density to draw more from large cells)
