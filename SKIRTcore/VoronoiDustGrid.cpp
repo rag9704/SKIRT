@@ -504,16 +504,17 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
             {
                 vector<int> neighborID = _mesh->getNeighbors(m);
                 int nrNeighbors = neighborID.size();
+                Position cellpos = _mesh->particlePosition(m);
                 for (int mni=0; mni < nrNeighbors; mni++)
                 {
                     int mn = neighborID[mni];
                     if (mn >= 0)
                     {
-                        totalgrad += abs(ds->temperature(mn) - ds->temperature(m)) /
-                                     (_mesh->particlePosition(mn) - cellpos).norm();
+                        tempgrad += abs(ds->temperature(mn) - ds->temperature(m)) /
+                                    (_mesh->particlePosition(mn) - cellpos).norm();
                     }
                 }
-                tempGrad /= nrNeighbors;
+                tempgrad /= nrNeighbors;
             }
             TMv[m] = pow(ds->temperature(m), _tempImportance) * pow(ds->density(m), _massImportance) *
                      pow(tempgrad, _tempGradImportance) * ds->volume(m);
