@@ -85,6 +85,12 @@ class VoronoiDustGrid : public BoxDustGrid
     Q_CLASSINFO("MaxValue", "100")
     Q_CLASSINFO("Default", "1")
 
+    Q_CLASSINFO("Property", "tempGradImportance")
+    Q_CLASSINFO("Title", "the importance of temperature gradient when using tempMassFraction")
+    Q_CLASSINFO("MinValue", "0")
+    Q_CLASSINFO("MaxValue", "100")
+    Q_CLASSINFO("Default", "1")
+
     Q_CLASSINFO("Property", "voronoiMeshFile")
     Q_CLASSINFO("Title", "the Voronoi mesh data file")
     Q_CLASSINFO("Optional", "true")
@@ -180,6 +186,12 @@ public:
     /** Returns the importance of density when using a temperature times density distribution */
     Q_INVOKABLE double massImportance() const;
 
+    /** Sets the importance of temperature gradient when using a temperature times density distribution */
+    Q_INVOKABLE void setTempGradImportance(double value);
+
+    /** Returns the importance of temperature gradient when using a temperature times density distribution */
+    Q_INVOKABLE double tempGradImportance() const;
+
     /** Sets the file containing the Voronoi particle locations in case \em distribution has the
         value \em File. */
     Q_INVOKABLE void setVoronoiMeshFile(VoronoiMeshFile* value);
@@ -230,6 +242,7 @@ private:
     double _tempMassFraction;
     double _tempImportance;
     double _massImportance;
+    double _tempGradImportance;
     VoronoiMeshFile* _meshfile;
 
     // data members initialized during setup

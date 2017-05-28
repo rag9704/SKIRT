@@ -375,6 +375,20 @@ double VoronoiDustGrid::massImportance() const
 
 //////////////////////////////////////////////////////////////////////
 
+void VoronoiDustGrid::setTempGradImportance(double value)
+{
+    _tempGradImportance = value;
+}
+
+//////////////////////////////////////////////////////////////////////
+
+double VoronoiDustGrid::tempGradImportance() const
+{
+    return _tempGradImportance;
+}
+
+//////////////////////////////////////////////////////////////////////
+
 void VoronoiDustGrid::setVoronoiMeshFile(VoronoiMeshFile* value)
 {
     if (_meshfile) delete _meshfile;
@@ -485,7 +499,24 @@ void VoronoiDustGrid::drawFromTemperatureDistribution()
         // Loop over all particles
         for (int m=0; m<_numParticles; m++)
         {
-            TMv[m] = pow(ds->temperature(m), _tempImportance)*pow(ds->density(m), _massImportance)*ds->volume(m);
+            double tempgrad = 0;
+            if (_tempGradImportance > 0)
+            {
+                vector<int> neighborID = _mesh->getNeighbors(m);
+                int nrNeighbors = neighborID.size();
+                for (int mni=0; mni < nrNeighbors; mni++)
+                {
+                    int mn = neighborID[mni];
+                    if (mn >= 0)
+                    {
+                        totalgrad += abs(ds->temperature(mn) - ds->temperature(m)) /
+                                     (_mesh->particlePosition(mn) - cellpos).norm();
+                    }
+                }
+                tempGrad /= nrNeighbors;
+            }
+            TMv[m] = pow(ds->temperature(m), _tempImportance) * pow(ds->density(m), _massImportance) *
+                     pow(tempgrad, _tempGradImportance) * ds->volume(m);
         }
     }
 
